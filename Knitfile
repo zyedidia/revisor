@@ -1,0 +1,4 @@
+return b{
+    $ build:VB:
+        go build ./cmd/hypertain
+}

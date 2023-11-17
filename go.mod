@@ -1,4 +1,4 @@
-module github.com/zyedidia/hyperbox
+module github.com/zyedidia/hypertain
 
 go 1.21.3
 

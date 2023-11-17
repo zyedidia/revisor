@@ -14,14 +14,14 @@ type VM struct {
 }
 
 func NewVM(kvmfd uintptr, memSize int64) (*VM, error) {
-	v, err := Ioctl(kvmfd, kvmGetAPIVersion, 0)
+	v, err := getAPIVersion(kvmfd)
 	if err != nil {
 		return nil, err
 	}
 	if v != 12 {
 		return nil, fmt.Errorf("KVM_GET_API_VERISON: got %d, expected 12", v)
 	}
-	vmfd, err := Ioctl(kvmfd, kvmCreateVM, 0)
+	vmfd, err := createVM(kvmfd)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (vm *VM) InitMemory() error {
 }
 
 func (vm *VM) addVCPU() error {
-	fd, err := Ioctl(vm.fd, kvmCreateVCPU, uintptr(len(vm.vcpus)))
+	fd, err := Ioctl(vm.fd, IIO(kvmCreateVCPU), uintptr(len(vm.vcpus)))
 	if err != nil {
 		return err
 	}

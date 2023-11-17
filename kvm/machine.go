@@ -1,8 +1,13 @@
 package kvm
 
 import (
+	"debug/elf"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"runtime"
+	"sync"
 	"syscall"
 	"unsafe"
 )
@@ -45,8 +50,9 @@ func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
 	}
 
 	m := &Machine{
-		kvm: kvmfd,
-		vm:  vm,
+		kvm:  kvmfd,
+		vm:   vm,
+		runs: make([]*RunData, ncpus),
 	}
 
 	for cpu := 0; cpu < ncpus; cpu++ {
@@ -112,4 +118,181 @@ func (m *Machine) initCPUID(cpu int) error {
 	}
 
 	return nil
+}
+
+func (m *Machine) Translate(cpu int, vaddr uint64) (Translation, error) {
+	tr := &Translation{
+		LinearAddress: vaddr,
+	}
+	err := m.vm.vcpus[cpu].Translate(tr)
+	return *tr, err
+}
+
+func (m *Machine) SetupRegs(rip, bp uint64, amd64 bool) error {
+	for _, cpu := range m.vm.vcpus {
+		if err := cpu.initRegs(rip, bp); err != nil {
+			return err
+		}
+		if err := cpu.initSregs(m.vm.mem, amd64); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RunInfiniteLoop runs the guest cpu until there is an error.
+// If the error is ErrExitDebug, this function can be called again.
+func (m *Machine) RunInfiniteLoop(cpu int) error {
+	// https://www.kernel.org/doc/Documentation/virtual/kvm/api.txt
+	// - vcpu ioctls: These query and set attributes that control the operation
+	//   of a single virtual cpu.
+	//
+	//   vcpu ioctls should be issued from the same thread that was used to create
+	//   the vcpu, except for asynchronous vcpu ioctl that are marked as such in
+	//   the documentation.  Otherwise, the first ioctl after switching threads
+	//   could see a performance impact.
+	//
+	// - device ioctls: These query and set attributes that control the operation
+	//   of a single device.
+	//
+	//   device ioctls must be issued from the same process (address space) that
+	//   was used to create the VM.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	for {
+		isContinue, err := m.RunOnce(cpu)
+		if isContinue {
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+			}
+
+			continue
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+}
+
+var (
+	// ErrUnexpectedExitReason is any error that we do not understand.
+	ErrUnexpectedExitReason = errors.New("unexpected kvm exit reason")
+
+	// ErrDebug is a debug exit, caused by single step or breakpoint.
+	ErrDebug = errors.New("debug exit")
+)
+
+// RunOnce runs the guest vCPU until it exits.
+func (m *Machine) RunOnce(cpu int) (bool, error) {
+	if cpu >= len(m.vm.vcpus) {
+		return false, fmt.Errorf("CPU %d out of range", cpu)
+	}
+
+	vcpu := m.vm.vcpus[cpu]
+
+	_ = vcpu.Run()
+	exit := ExitType(m.runs[cpu].ExitReason)
+
+	switch exit {
+	case EXITHLT:
+		return false, nil
+	case EXITIO:
+		return true, nil
+	case EXITUNKNOWN:
+		return true, nil
+	case EXITINTR:
+		// When a signal is sent to the thread hosting the VM it will result in EINTR
+		// refs https://gist.github.com/mcastelino/df7e65ade874f6890f618dc51778d83a
+		return true, nil
+	case EXITDEBUG:
+		return false, errors.New("error: debug trap")
+
+	case EXITDCR,
+		EXITEXCEPTION,
+		EXITFAILENTRY,
+		EXITHYPERCALL,
+		EXITINTERNALERROR,
+		EXITIRQWINDOWOPEN,
+		EXITMMIO,
+		EXITNMI,
+		EXITS390RESET,
+		EXITS390SIEIC,
+		EXITSETTPR,
+		EXITSHUTDOWN,
+		EXITTPRACCESS:
+		return false, fmt.Errorf("%w: %s", ErrUnexpectedExitReason, exit.String())
+	default:
+		return false, fmt.Errorf("%w: %v", ErrUnexpectedExitReason, ExitType(m.runs[cpu].ExitReason).String())
+	}
+}
+
+func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
+	copy(m.vm.mem[cmdlineAddr:], params)
+	m.vm.mem[cmdlineAddr+len(params)] = 0 // null terminated
+
+	e, err := elf.NewFile(kernel)
+	if err != nil {
+		return err
+	}
+
+	amd64 := e.Class == elf.ELFCLASS64
+	entry := e.Entry
+	kernSize := 0
+
+	for i, p := range e.Progs {
+		if p.Type != elf.PT_LOAD {
+			continue
+		}
+
+		n, err := p.ReadAt(m.vm.mem[p.Paddr:], 0)
+		if !errors.Is(err, io.EOF) || uint64(n) != p.Filesz {
+			return fmt.Errorf("reading ELF prog %d@%#x: %d/%d bytes, err %w", i, p.Paddr, n, p.Filesz, err)
+		}
+		kernSize += n
+	}
+
+	if kernSize == 0 {
+		return fmt.Errorf("kernel is empty")
+	}
+
+	if err := m.SetupRegs(entry, cmdlineAddr, amd64); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Machine) StartVCPU(cpu int, wg *sync.WaitGroup) {
+	go func(cpu int) {
+		var err error
+		for tc := 0; ; tc++ {
+			err = m.RunInfiniteLoop(cpu)
+			if err == nil {
+				continue
+			}
+
+			if !errors.Is(err, ErrDebug) {
+				fmt.Printf("err: %v\r\n", err)
+
+				break
+			}
+		}
+
+		wg.Done()
+		fmt.Printf("CPU %d exited\n\r", cpu)
+	}(cpu)
+}
+
+func (m *Machine) NCPU() int {
+	return len(m.vm.vcpus)
+}
+
+func getAPIVersion(kvmfd uintptr) (uintptr, error) {
+	return Ioctl(kvmfd, IIO(kvmGetAPIVersion), uintptr(0))
+}
+
+func createVM(kvmfd uintptr) (uintptr, error) {
+	return Ioctl(kvmfd, IIO(kvmCreateVM), uintptr(0))
 }
