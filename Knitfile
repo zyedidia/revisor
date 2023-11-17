@@ -1,6 +1,6 @@
 return b{
     $ build:VB:
-        go build ./cmd/hypertain
+        go build ./cmd/ivis
     $ install:VB:
-        go install ./cmd/hypertain
+        go install ./cmd/ivis
 }

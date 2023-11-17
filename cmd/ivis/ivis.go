@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/zyedidia/hypertain"
-	"github.com/zyedidia/hypertain/kvm"
+	"github.com/zyedidia/ivis"
+	"github.com/zyedidia/ivis/kvm"
 )
 
 func gb(n int) int {
@@ -21,7 +21,7 @@ func main() {
 		log.Fatal("no input")
 	}
 
-	container := hypertain.NewContainer()
+	container := ivis.NewContainer()
 
 	m, err := kvm.NewMachine("/dev/kvm", 1, gb(16), container)
 	if err != nil {
@@ -34,7 +34,7 @@ func main() {
 	}
 	defer kernel.Close()
 
-	err = hypertain.Boot(m, kernel, "")
+	err = ivis.Boot(m, kernel, "")
 	if err != nil {
 		log.Fatal(err)
 	}

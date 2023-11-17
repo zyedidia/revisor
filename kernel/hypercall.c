@@ -4,10 +4,6 @@
 
 #include "hypercall.h"
 
-int execve(char *name, char **argv, char **env) {
-    return -1;
-}
-
 void* sbrk(int incr) {
     return NULL;
 }
@@ -51,14 +47,6 @@ int write(int file, char* ptr, int len) {
 
 int read(int file, char* ptr, int len) {
     return hypercall_3(HYP_READ, file, (uintptr_t) ptr, len);
-}
-
-int fork(void) {
-    return -1;
-}
-
-int wait() {
-    return -1;
 }
 
 int unlink(char* name) {

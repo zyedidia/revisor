@@ -1,4 +1,4 @@
-module github.com/zyedidia/hypertain
+module github.com/zyedidia/ivis
 
 go 1.21.3
 

@@ -1,5 +1,5 @@
 .knit
-/hypertain
+/ivis
 *.elf
 *.d
 *.o

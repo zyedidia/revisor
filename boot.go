@@ -1,11 +1,11 @@
-package hypertain
+package ivis
 
 import (
 	"io"
 	"log"
 	"sync"
 
-	"github.com/zyedidia/hypertain/kvm"
+	"github.com/zyedidia/ivis/kvm"
 )
 
 func Boot(m *kvm.Machine, kernel io.ReaderAt, params string) error {

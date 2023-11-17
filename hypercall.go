@@ -1,4 +1,4 @@
-package hypertain
+package ivis
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/zyedidia/hypertain/kvm"
+	"github.com/zyedidia/ivis/kvm"
 )
 
 const (

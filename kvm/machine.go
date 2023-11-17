@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"runtime"
 	"sync"
 	"syscall"
@@ -239,7 +240,9 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 		EXITTPRACCESS:
 		return false, fmt.Errorf("%w: %s", ErrUnexpectedExitReason, exit.String())
 	default:
-		return false, fmt.Errorf("%w: %v", ErrUnexpectedExitReason, ExitType(m.runs[cpu].ExitReason).String())
+		r, _ := vcpu.GetRegs()
+		s, _ := vcpu.GetSregs()
+		return false, fmt.Errorf("%w: %v: regs:\n%s", ErrUnexpectedExitReason, ExitType(m.runs[cpu].ExitReason).String(), show("", s, r))
 	}
 }
 
@@ -297,4 +300,31 @@ func getAPIVersion(kvmfd uintptr) (uintptr, error) {
 
 func createVM(kvmfd uintptr) (uintptr, error) {
 	return Ioctl(kvmfd, IIO(kvmCreateVM), uintptr(0))
+}
+
+func showone(indent string, in interface{}) string {
+	var ret string
+
+	s := reflect.ValueOf(in).Elem()
+	typeOfT := s.Type()
+
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		if f.Kind() == reflect.String {
+			ret += fmt.Sprintf(indent+"%s %s = %s\n", typeOfT.Field(i).Name, f.Type(), f.Interface())
+		} else {
+			ret += fmt.Sprintf(indent+"%s %s = %#x\n", typeOfT.Field(i).Name, f.Type(), f.Interface())
+		}
+	}
+
+	return ret
+}
+
+func show(indent string, l ...interface{}) string {
+	var ret string
+	for _, i := range l {
+		ret += showone(indent, i)
+	}
+
+	return ret
 }
