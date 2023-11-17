@@ -8,7 +8,7 @@ obj = knit.prefix(obj, ".")
 local newlib := build-newlib/libc.a
 
 return b{
-    $ kernel.elf: $obj
+    $ kernel.elf: $obj link/kernel.ld[I]
         gcc -nostdlib $input $newlib -o $output -Tlink/kernel.ld -static
 
     $ .%.o:D[.%.d]: %.c

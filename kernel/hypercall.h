@@ -4,8 +4,7 @@
 
 static inline uintptr_t hypercall_0(int sysno) {
     register uintptr_t sys asm("rax") = sysno;
-    register uintptr_t a0 asm("rdi");
-    asm volatile("out %%al, %%dx" : "=r"(sys) : "r"(a0) : "memory");
+    asm volatile("out %%al, %%dx" : "+r"(sys) :: "memory");
     return sys;
 }
 static inline uintptr_t hypercall_1(int sysno, uintptr_t arg0) {
@@ -33,4 +32,7 @@ static inline uintptr_t hypercall_3(int sysno, uintptr_t arg0, uintptr_t arg1, u
 enum {
     HYP_WRITE = 0,
     HYP_EXIT =  1,
+    HYP_OPEN =  2,
+    HYP_READ =  3,
+    HYP_CLOSE = 4,
 };

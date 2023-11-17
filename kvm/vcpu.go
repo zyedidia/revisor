@@ -164,9 +164,9 @@ func (vcpu *VCPU) initSregs(mem []byte, amd64 bool) error {
 	}
 
 	sregs.CR3 = uint64(pageTableBase)
-	sregs.CR4 = CR4xPAE
+	sregs.CR4 = CR4xPAE | CR4xOSFXSR | CR4xOSXMMEXCPT
 	sregs.CR0 = CR0xPE | CR0xMP | CR0xET | CR0xNE | CR0xWP | CR0xAM | CR0xPG
-	sregs.EFER = EFERxLME | EFERxLMA
+	sregs.EFER = EFERxLME | EFERxLMA | EFERxSCE
 
 	seg := Segment{
 		Base:     0,

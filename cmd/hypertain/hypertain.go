@@ -21,7 +21,9 @@ func main() {
 		log.Fatal("no input")
 	}
 
-	m, err := kvm.NewMachine("/dev/kvm", 1, gb(16), hypertain.DefaultHandler)
+	container := hypertain.NewContainer()
+
+	m, err := kvm.NewMachine("/dev/kvm", 1, gb(16), container)
 	if err != nil {
 		log.Fatal(err)
 	}

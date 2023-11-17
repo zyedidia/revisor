@@ -13,11 +13,11 @@ void* sbrk(int incr) {
 }
 
 int close(int file) {
-    return -1;
+    return hypercall_1(HYP_CLOSE, file);
 }
 
 int open(const char* name, int flags, int mode) {
-    return -1;
+    return hypercall_3(HYP_OPEN, (uintptr_t) name, flags, mode);
 }
 
 int fstat(int file, struct stat* st) {
@@ -50,7 +50,7 @@ int write(int file, char* ptr, int len) {
 }
 
 int read(int file, char* ptr, int len) {
-    return -1;
+    return hypercall_3(HYP_READ, file, (uintptr_t) ptr, len);
 }
 
 int fork(void) {

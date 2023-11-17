@@ -24,16 +24,18 @@ const (
 	MinMemSize = 1 << 25
 )
 
-type HyperHandlerFn func(regs *Regs, mem []byte) bool
+type HyperHandler interface {
+	Hypercall(regs *Regs, mem []byte) bool
+}
 
 type Machine struct {
 	kvm     uintptr
 	vm      *VM
 	runs    []*RunData
-	handler HyperHandlerFn
+	handler HyperHandler
 }
 
-func NewMachine(kvmPath string, ncpus int, memSize int, hyperhandler HyperHandlerFn) (*Machine, error) {
+func NewMachine(kvmPath string, ncpus int, memSize int, handler HyperHandler) (*Machine, error) {
 	if memSize < MinMemSize {
 		return nil, fmt.Errorf("memory size %d: too small", memSize)
 	}
@@ -56,7 +58,7 @@ func NewMachine(kvmPath string, ncpus int, memSize int, hyperhandler HyperHandle
 		kvm:     kvmfd,
 		vm:      vm,
 		runs:    make([]*RunData, ncpus),
-		handler: hyperhandler,
+		handler: handler,
 	}
 
 	for cpu := 0; cpu < ncpus; cpu++ {
@@ -205,7 +207,7 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		exited := m.handler(regs, m.vm.mem)
+		exited := m.handler.Hypercall(regs, m.vm.mem)
 		if exited {
 			return false, nil
 		}

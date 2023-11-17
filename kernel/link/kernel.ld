@@ -41,6 +41,12 @@ SECTIONS {
         _stack_high = .;
     }
 
+    .tls : {
+        . = ALIGN(16);
+        _tls_start = .;
+        . += 4K;
+    }
+
     .heap : {
         . = ALIGN(4K);
         _heap_start = .;
