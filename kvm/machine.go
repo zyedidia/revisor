@@ -24,13 +24,16 @@ const (
 	MinMemSize = 1 << 25
 )
 
+type HyperHandlerFn func(regs *Regs, mem []byte)
+
 type Machine struct {
-	kvm  uintptr
-	vm   *VM
-	runs []*RunData
+	kvm     uintptr
+	vm      *VM
+	runs    []*RunData
+	handler HyperHandlerFn
 }
 
-func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
+func NewMachine(kvmPath string, ncpus int, memSize int, hyperhandler HyperHandlerFn) (*Machine, error) {
 	if memSize < MinMemSize {
 		return nil, fmt.Errorf("memory size %d: too small", memSize)
 	}
@@ -50,9 +53,10 @@ func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
 	}
 
 	m := &Machine{
-		kvm:  kvmfd,
-		vm:   vm,
-		runs: make([]*RunData, ncpus),
+		kvm:     kvmfd,
+		vm:      vm,
+		runs:    make([]*RunData, ncpus),
+		handler: hyperhandler,
 	}
 
 	for cpu := 0; cpu < ncpus; cpu++ {
@@ -170,9 +174,7 @@ func (m *Machine) RunInfiniteLoop(cpu int) error {
 			continue
 		}
 
-		if err != nil {
-			return err
-		}
+		return err
 	}
 }
 
@@ -199,6 +201,14 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 	case EXITHLT:
 		return false, nil
 	case EXITIO:
+		regs, err := vcpu.GetRegs()
+		if err != nil {
+			return false, err
+		}
+		m.handler(regs, m.vm.mem)
+		if err := vcpu.SetRegs(regs); err != nil {
+			return false, err
+		}
 		return true, nil
 	case EXITUNKNOWN:
 		return true, nil
@@ -266,22 +276,9 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 
 func (m *Machine) StartVCPU(cpu int, wg *sync.WaitGroup) {
 	go func(cpu int) {
-		var err error
-		for tc := 0; ; tc++ {
-			err = m.RunInfiniteLoop(cpu)
-			if err == nil {
-				continue
-			}
-
-			if !errors.Is(err, ErrDebug) {
-				fmt.Printf("err: %v\r\n", err)
-
-				break
-			}
-		}
-
+		err := m.RunInfiniteLoop(cpu)
 		wg.Done()
-		fmt.Printf("CPU %d exited\n\r", cpu)
+		fmt.Printf("CPU %d exited (err=%v)\n\r", cpu, err)
 	}(cpu)
 }
 

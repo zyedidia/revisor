@@ -1,0 +1,4 @@
+return b{
+    $ test.elf: test.s
+        gcc -nostdlib -O2 $input -o $output -static
+}
