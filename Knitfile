@@ -1,4 +1,6 @@
 return b{
     $ build:VB:
         go build ./cmd/hypertain
+    $ install:VB:
+        go install ./cmd/hypertain
 }

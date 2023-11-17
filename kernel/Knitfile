@@ -1,0 +1,23 @@
+local knit = require("knit")
+
+local csrc = knit.glob("*.c")
+local ssrc = knit.glob("*.s")
+local obj = knit.join(knit.extrepl(csrc, ".c", ".o"), knit.extrepl(ssrc, ".s", ".o"))
+obj = knit.prefix(obj, ".")
+
+local newlib := build-newlib/libc.a
+
+return b{
+    $ kernel.elf: $obj
+        gcc -nostdlib $input $newlib -o $output -Tlink/kernel.ld -static
+
+    $ .%.o:D[.%.d]: %.c
+        gcc -O2 -nostdlib -Inewlib/newlib/libc/include -MMD -c $input -o $output
+    $ .%.o: %.s
+        gcc -nostdlib -c $input -o $output
+
+    $ build-newlib:V: build-newlib/libc.a
+
+    $ build-newlib/libc.a build-newlib/libg.a build-newlib/libm.a:
+        mkdir -p build-newlib && cd build-newlib && CFLAGS="-D_FORITY_SOURCE=0" ../newlib/newlib/configure --disable-multilib && make
+}

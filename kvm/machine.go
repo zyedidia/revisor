@@ -24,7 +24,7 @@ const (
 	MinMemSize = 1 << 25
 )
 
-type HyperHandlerFn func(regs *Regs, mem []byte)
+type HyperHandlerFn func(regs *Regs, mem []byte) bool
 
 type Machine struct {
 	kvm     uintptr
@@ -205,7 +205,10 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		m.handler(regs, m.vm.mem)
+		exited := m.handler(regs, m.vm.mem)
+		if exited {
+			return false, nil
+		}
 		if err := vcpu.SetRegs(regs); err != nil {
 			return false, err
 		}
