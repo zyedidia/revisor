@@ -1,4 +1,4 @@
-module github.com/zyedidia/ivis
+module github.com/zyedidia/revisor
 
 go 1.21.3
 

@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/zyedidia/ivis"
-	"github.com/zyedidia/ivis/kvm"
+	"github.com/zyedidia/revisor"
+	"github.com/zyedidia/revisor/kvm"
 )
 
 func gb(n int) int {
@@ -23,7 +23,7 @@ func main() {
 		log.Fatal("no input")
 	}
 
-	container := ivis.NewContainer()
+	container := revisor.NewContainer()
 
 	m, err := kvm.NewMachine("/dev/kvm", 1, gb(16), container)
 	if err != nil {
@@ -36,7 +36,7 @@ func main() {
 	}
 	defer kernel.Close()
 
-	err = ivis.Boot(m, kernel, "", *trace)
+	err = revisor.Boot(m, kernel, "", *trace)
 	if err != nil {
 		log.Fatal(err)
 	}

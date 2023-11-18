@@ -1,5 +1,5 @@
 .knit
-/ivis
+/revisor
 *.elf
 *.d
 *.o

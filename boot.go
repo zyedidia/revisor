@@ -1,11 +1,11 @@
-package ivis
+package revisor
 
 import (
 	"io"
 	"log"
 	"sync"
 
-	"github.com/zyedidia/ivis/kvm"
+	"github.com/zyedidia/revisor/kvm"
 )
 
 func Boot(m *kvm.Machine, kernel io.ReaderAt, params string, trace bool) error {

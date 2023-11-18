@@ -1,15 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "hypercall.h"
 #include "x86-64.h"
+#include "kernel.h"
 
-extern uint8_t* brk;
 extern uint8_t _end;
 
 void kinit() {
-    brk = &_end;
+    sbrk_init();
     void* tls = malloc(4096);
     wrmsr(MSR_IA32_GS_BASE, (uint64_t) tls);
 }

@@ -4,12 +4,17 @@
 
 #include "hypercall.h"
 
-uint8_t* brk;
+static uint8_t* brkp;
+extern uint8_t _end;
+
+void sbrk_init() {
+    brkp = &_end;
+}
 
 void* sbrk(int incr) {
     if (incr)
-        brk += incr;
-    return (void*) brk;
+        brkp += incr;
+    return (void*) brkp;
 }
 
 int close(int file) {

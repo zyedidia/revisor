@@ -1,4 +1,4 @@
-package ivis
+package revisor
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/zyedidia/ivis/kvm"
+	"github.com/zyedidia/revisor/kvm"
 )
 
 const (
