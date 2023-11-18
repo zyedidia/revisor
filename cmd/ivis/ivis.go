@@ -14,6 +14,8 @@ func gb(n int) int {
 }
 
 func main() {
+	trace := flag.Bool("trace", false, "show instruction trace")
+
 	flag.Parse()
 	args := flag.Args()
 
@@ -34,7 +36,7 @@ func main() {
 	}
 	defer kernel.Close()
 
-	err = ivis.Boot(m, kernel, "")
+	err = ivis.Boot(m, kernel, "", *trace)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -12,7 +12,7 @@ return b{
         gcc -nostdlib $input $newlib -o $output -Tlink/kernel.ld -static
 
     $ .%.o:D[.%.d]: %.c
-        gcc -O2 -nostdlib -Inewlib/newlib/libc/include -MMD -c $input -o $output
+        gcc -O0 -nostdlib -Inewlib/newlib/libc/include -MMD -c $input -o $output
     $ .%.o: %.s
         gcc -nostdlib -c $input -o $output
 

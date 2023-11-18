@@ -1,6 +1,7 @@
 package kvm
 
 import (
+	"bytes"
 	"debug/elf"
 	"errors"
 	"fmt"
@@ -47,6 +48,14 @@ func NewMachine(kvmPath string, ncpus int, memSize int, handler HyperHandler) (*
 	kvmfd := devkvm.Fd()
 	vm, err := NewVM(kvmfd, int64(memSize))
 	if err != nil {
+		return nil, err
+	}
+
+	if err := vm.SetTSSAddr(KVMTSSStart); err != nil {
+		return nil, err
+	}
+
+	if err := vm.SetIdentityMapAddr(KVMIdentityMapStart); err != nil {
 		return nil, err
 	}
 
@@ -223,8 +232,7 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 		// refs https://gist.github.com/mcastelino/df7e65ade874f6890f618dc51778d83a
 		return true, nil
 	case EXITDEBUG:
-		return false, errors.New("error: debug trap")
-
+		return false, ErrDebug
 	case EXITDCR,
 		EXITEXCEPTION,
 		EXITFAILENTRY,
@@ -282,9 +290,30 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 	return nil
 }
 
-func (m *Machine) StartVCPU(cpu int, wg *sync.WaitGroup) {
+func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
+	m.SingleStep(trace)
+
 	go func(cpu int) {
-		err := m.RunInfiniteLoop(cpu)
+		var err error
+		for tc := 0; ; tc++ {
+			err = m.RunInfiniteLoop(cpu)
+			if !trace {
+				break
+			}
+			if !errors.Is(err, ErrDebug) {
+				break
+			}
+			_, r, s, err := m.Inst(cpu)
+			if err != nil {
+				fmt.Printf("disassembling after debug exit:%v", err)
+			} else {
+				// sregs, _ := m.vm.vcpus[cpu].GetSregs()
+				fmt.Printf("regs:\n%s", show("", r))
+				fmt.Printf("%#x:%s\n", r.RIP, s)
+			}
+			m.SingleStep(trace)
+		}
+
 		wg.Done()
 		fmt.Printf("CPU %d exited (err=%v)\n\r", cpu, err)
 	}(cpu)
@@ -327,4 +356,32 @@ func show(indent string, l ...interface{}) string {
 	}
 
 	return ret
+}
+
+// SingleStep enables single stepping the guest.
+func (m *Machine) SingleStep(onoff bool) error {
+	for _, cpu := range m.vm.vcpus {
+		if err := cpu.SingleStep(onoff); err != nil {
+			return fmt.Errorf("single step %d:%w", cpu, err)
+		}
+	}
+
+	return nil
+}
+
+// ReadAt implements io.ReadAt for the kvm guest pvh.
+func (m *Machine) ReadAt(b []byte, off int64) (int, error) {
+	mem := bytes.NewReader(m.vm.mem)
+
+	return mem.ReadAt(b, off)
+}
+
+// ReadBytes reads bytes from the CPUs virtual address space.
+func (m *Machine) ReadBytes(cpu int, b []byte, vaddr uint64) (int, error) {
+	pa, err := m.Translate(cpu, vaddr)
+	if err != nil {
+		return -1, err
+	}
+
+	return m.ReadAt(b, int64(pa.LinearAddress))
 }
