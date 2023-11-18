@@ -51,11 +51,11 @@ func (c *Container) addFile(f *os.File) (uint64, error) {
 	return fd, nil
 }
 
-func (c *Container) Hypercall(regs *kvm.Regs, mem []byte) bool {
+func (c *Container) Hypercall(cpu *kvm.VCPU, regs *kvm.Regs, mem []byte) bool {
 	switch regs.RAX {
 	case hypWrite:
 		fd := regs.RDI
-		ptr := regs.RSI
+		ptr := cpu.VtoP(regs.RSI)
 		size := regs.RDX
 		if f, ok := c.fdtable[fd]; !ok {
 			regs.RAX = errFail
@@ -64,7 +64,7 @@ func (c *Container) Hypercall(regs *kvm.Regs, mem []byte) bool {
 			regs.RAX = size
 		}
 	case hypOpen:
-		name := cstring(mem[regs.RDI:])
+		name := cstring(mem[cpu.VtoP(regs.RDI):])
 		flags := regs.RSI
 		mode := regs.RDX
 
@@ -82,7 +82,7 @@ func (c *Container) Hypercall(regs *kvm.Regs, mem []byte) bool {
 		regs.RAX = fd
 	case hypRead:
 		fd := regs.RDI
-		ptr := regs.RSI
+		ptr := cpu.VtoP(regs.RSI)
 		size := regs.RDX
 		if f, ok := c.fdtable[fd]; !ok {
 			regs.RAX = errFail
@@ -105,7 +105,7 @@ func (c *Container) Hypercall(regs *kvm.Regs, mem []byte) bool {
 	case hypExit:
 		return true
 	default:
-		fmt.Println("unknown hypercall", regs.RAX)
+		fmt.Printf("%x: unknown hypercall: %d\n", regs.RIP, regs.RAX)
 	}
 	return false
 }

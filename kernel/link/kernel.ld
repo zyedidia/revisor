@@ -1,54 +1,77 @@
 OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(kernel_entry)
+
+KERNEL_LMA = 0x0000000000200000; /* 2 MEG */
+KERNEL_VMA = 0xffffffff80000000 + KERNEL_LMA;
+
+ENTRY(bootstrap)
 
 SECTIONS {
-    .text 0x1000 : {
-        _code_start = .;
-        KEEP(*(.text.boot))
-        *(.text*)
-        . = ALIGN(8);
-        _code_end = .;
-    }
-    .rodata : {
-        . = ALIGN(8);
-        _rodata_start = .;
-        *(.srodata*)
-        *(.rodata*)
-        . = ALIGN(8);
-        _rodata_end = .;
-    }
-    .data : { 
-        . = ALIGN(8);
-        _data_start = .;
-        *(.sdata*)
-        *(.data*)
-        . = ALIGN(8);
-        _data_end = .;
-    } 
-    .bss : {
-        . = ALIGN(8);
-        _bss_start = .;
-        *(.sbss*)
-        *(.bss*)
-        *(COMMON)
-        . = ALIGN(8);
-        _bss_end = .;
-    }
+	. = KERNEL_VMA;
 
-    .stack : {
-        . = ALIGN(16);
-        . += 16K;
-        _stack_high = .;
-    }
+	_start = .;
+	.text : AT(ADDR(.text) - KERNEL_VMA) {
+		_code = .;
+		*(.text*)
+		*(.gnu.linkonce.t*)
+		. = ALIGN(0x1000);
+	}
 
-    .tls : {
-        . = ALIGN(16);
-        _tls_start = .;
-        . += 4K;
-    }
+	.rodata : AT(ADDR(.rodata) - KERNEL_VMA) {
+		_rodata = .;
+		*(.rodata*)
+		*(.gnu.linkonce.r*)
 
-    .heap : {
-        . = ALIGN(4K);
-        _heap_start = .;
-    }
+		. = ALIGN(8);
+		__CTOR_LIST__ = .;
+		*(.ctors)
+		__CTOR_END__ = .;
+
+		. = ALIGN(8);
+		__DTOR_LIST__ = .;
+		*(.dtors)
+		__DTOR_END__ = .;
+
+		. = ALIGN(8);
+		__INIT_LIST__ = .;
+		KEEP (*(.init_array))
+		__INIT_END__ = .;
+
+		. = ALIGN(8);
+		__FINI_LIST__ = .;
+		KEEP (*(.fini_array))
+		__FINI_END__ = .;
+
+		. = ALIGN(0x1000);
+	}
+
+	.data : AT(ADDR(.data) - KERNEL_VMA) {
+		_data = .;
+		*(.data*)
+		*(.gnu.linkonce.d*)
+		. = ALIGN(0x1000);
+	}
+
+	.eh_frame : AT(ADDR(.eh_frame) - KERNEL_VMA) {
+		_eh_frame = .;
+		*(.eh_frame)
+		*(.eh_frame_hdr)
+		. = ALIGN(0x1000);
+	}
+
+	_edata = .;
+
+	.bss : AT(ADDR(.bss) - KERNEL_VMA) {
+		_bss = .;
+		*(.bss*)
+		*(.gnu.linkonce.b*)
+		*(COMMON)
+		. = ALIGN(0x1000);
+	}
+
+	_end = .;
+
+	/DISCARD/ : {
+		*(.comment)
+		*(note.*)
+	}
 }

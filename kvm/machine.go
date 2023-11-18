@@ -20,6 +20,7 @@ const (
 
 	initrdAddr  = 0xf000000
 	highMemBase = 0x100000
+	kernelVMA   = 0xffffffff80000000
 
 	pageTableBase = 0x30_000
 
@@ -27,7 +28,7 @@ const (
 )
 
 type HyperHandler interface {
-	Hypercall(regs *Regs, mem []byte) bool
+	Hypercall(cpu *VCPU, regs *Regs, mem []byte) bool
 }
 
 type Machine struct {
@@ -217,7 +218,7 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		exited := m.handler.Hypercall(regs, m.vm.mem)
+		exited := m.handler.Hypercall(&m.vm.vcpus[cpu], regs, m.vm.mem)
 		if exited {
 			return false, nil
 		}
@@ -263,8 +264,9 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 		return err
 	}
 
-	amd64 := e.Class == elf.ELFCLASS64
-	entry := e.Entry
+	// amd64 := e.Class == elf.ELFCLASS64
+	amd64 := true
+	entry := e.Entry - kernelVMA
 	kernSize := 0
 
 	for i, p := range e.Progs {
@@ -272,9 +274,12 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 			continue
 		}
 
-		n, err := p.ReadAt(m.vm.mem[p.Paddr:], 0)
+		n, err := p.ReadAt(m.vm.mem[p.Vaddr-kernelVMA:], 0)
 		if !errors.Is(err, io.EOF) || uint64(n) != p.Filesz {
-			return fmt.Errorf("reading ELF prog %d@%#x: %d/%d bytes, err %w", i, p.Paddr, n, p.Filesz, err)
+			return fmt.Errorf("reading ELF prog %d@%#x: %d/%d bytes, err %w", i, p.Vaddr-kernelVMA, n, p.Filesz, err)
+		}
+		for i := p.Filesz; i < p.Memsz; i++ {
+			m.vm.mem[p.Vaddr-kernelVMA+i] = 0
 		}
 		kernSize += n
 	}
@@ -303,9 +308,10 @@ func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
 			if !errors.Is(err, ErrDebug) {
 				break
 			}
+			// result, err := m.Translate(cpu, 0xffffffff802121c0)
 			_, r, s, err := m.Inst(cpu)
 			if err != nil {
-				fmt.Printf("disassembling after debug exit:%v", err)
+				fmt.Printf("disassembling after debug exit:%v\n", err)
 			} else {
 				// sregs, _ := m.vm.vcpus[cpu].GetSregs()
 				fmt.Printf("regs:\n%s", show("", r))
@@ -382,6 +388,7 @@ func (m *Machine) ReadBytes(cpu int, b []byte, vaddr uint64) (int, error) {
 	if err != nil {
 		return -1, err
 	}
+	fmt.Printf("%x %x\n", vaddr, pa.PhysicalAddress)
 
-	return m.ReadAt(b, int64(pa.LinearAddress))
+	return m.ReadAt(b, int64(pa.PhysicalAddress))
 }

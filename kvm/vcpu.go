@@ -65,6 +65,17 @@ func (vcpu *VCPU) Translate(t *Translation) error {
 	return err
 }
 
+func (vcpu *VCPU) VtoP(v uint64) uint64 {
+	t := &Translation{
+		LinearAddress: v,
+	}
+	err := vcpu.Translate(t)
+	if err != nil {
+		panic(err)
+	}
+	return t.PhysicalAddress
+}
+
 func (vcpu *VCPU) initRegs(rip, bp uint64) error {
 	regs, err := vcpu.GetRegs()
 	if err != nil {
