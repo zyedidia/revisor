@@ -207,7 +207,7 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 
 	vcpu := m.vm.vcpus[cpu]
 
-	_ = vcpu.Run()
+	vcpu.Run()
 	exit := ExitType(m.runs[cpu].ExitReason)
 
 	switch exit {
@@ -314,7 +314,7 @@ func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
 				fmt.Printf("disassembling after debug exit:%v\n", err)
 			} else {
 				// sregs, _ := m.vm.vcpus[cpu].GetSregs()
-				fmt.Printf("regs:\n%s", show("", r))
+				// fmt.Printf("regs:\n%s", show("", r))
 				fmt.Printf("%#x:%s\n", r.RIP, s)
 			}
 			m.SingleStep(trace)
@@ -388,7 +388,6 @@ func (m *Machine) ReadBytes(cpu int, b []byte, vaddr uint64) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	fmt.Printf("%x %x\n", vaddr, pa.PhysicalAddress)
 
 	return m.ReadAt(b, int64(pa.PhysicalAddress))
 }
