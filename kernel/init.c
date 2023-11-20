@@ -98,7 +98,7 @@ void segments_init(void) {
     // Interrupt handler; most interrupts are effectively ignored
     memset(interrupt_descriptors, 0, sizeof(interrupt_descriptors));
     for (unsigned i = 16; i < arraysize(interrupt_descriptors); ++i) {
-        set_gate(&interrupt_descriptors[i], X86GATE_INTERRUPT, 0,
+        set_gate(&interrupt_descriptors[i], X86GATE_INTERRUPT, 3,
                  (uint64_t) default_int_handler);
     }
 
@@ -162,5 +162,5 @@ void proc_init(struct proc* p) {
 
 void set_pagetable(x86_64_pagetable* pagetable) {
     assert(PAGEOFFSET(pagetable) == 0); // must be page aligned
-    lcr3((uintptr_t) pagetable);
+    lcr3(ka2pa((uintptr_t) pagetable));
 }

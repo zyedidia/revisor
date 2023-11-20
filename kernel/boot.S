@@ -89,7 +89,7 @@ init_gdt64_ptr:
 	.word gdt64_end - gdt64 - 1
 	.long gdt64 - KERNEL_VMA
 
-/* ident map of first 4MB GB, and mirror it at the -2GB mark  */
+/* ident map of first 4MB, and mirror it at the -2GB mark  */
 .align 0x1000
 init_pml4:
 	.quad init_pdp - KERNEL_VMA + 3 // [0x0000000000000000 - 0x00000007ffffffff)

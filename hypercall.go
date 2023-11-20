@@ -17,6 +17,7 @@ const (
 	hypOpen  = 2
 	hypRead  = 3
 	hypClose = 4
+	hypLseek = 5
 )
 
 const (
@@ -62,6 +63,21 @@ func (c *Container) Hypercall(cpu *kvm.VCPU, regs *kvm.Regs, mem []byte) bool {
 		} else {
 			fmt.Fprint(f, string(mem[ptr:ptr+size]))
 			regs.RAX = size
+		}
+	case hypLseek:
+		fd := regs.RDI
+		off := int64(regs.RSI)
+		whence := int(regs.RDX)
+
+		if f, ok := c.fdtable[fd]; !ok {
+			regs.RAX = errFail
+		} else {
+			n, err := f.Seek(off, whence)
+			if err != nil {
+				regs.RAX = errFail
+				break
+			}
+			regs.RAX = uint64(n)
 		}
 	case hypOpen:
 		name := cstring(mem[cpu.VtoP(regs.RDI):])

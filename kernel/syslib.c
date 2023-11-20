@@ -12,9 +12,9 @@ void sbrk_init() {
 }
 
 void* sbrk(int incr) {
-    if (incr)
-        brkp += incr;
-    return (void*) brkp;
+    uint8_t* prev_brkp = brkp;
+    brkp += incr;
+    return (void*) prev_brkp;
 }
 
 int close(int file) {
@@ -33,8 +33,8 @@ int isatty(int file) {
     return 1;
 }
 
-int lseek(int file, int ptr, int dir) {
-    return 0;
+int lseek(int file, uint64_t off, int whence) {
+    return hypercall_3(HYP_LSEEK, file, off, whence);
 }
 
 void _exit(int status) {

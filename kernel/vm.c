@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "kernel.h"
 #include "x86-64.h"
@@ -23,12 +24,12 @@
 //    Returns 0 if the map succeeds, -1 if it fails (because a required
 //    page table could not be allocated).
 
-static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable,
-                 uintptr_t va, int perm, x86_64_pagetable* (*allocator)(void));
+static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable, uintptr_t va, int perm, bool alloc);
 
 int virtual_memory_map(x86_64_pagetable* pagetable, uintptr_t va,
-                       uintptr_t pa, size_t sz, int perm,
-                       x86_64_pagetable* (*allocator)(void)) {
+                       uintptr_t pa, size_t sz, int perm, bool alloc) {
+    perm = perm & ~PTE_PS;
+    printf("map %lx -> %lx, %lx, %x\n", va, pa, sz, perm);
     assert(va % PAGESIZE == 0); // virtual address is page-aligned
     assert(sz % PAGESIZE == 0); // size is a multiple of PAGESIZE
     assert(va + sz >= va || va + sz == 0); // va range does not wrap
@@ -45,7 +46,7 @@ int virtual_memory_map(x86_64_pagetable* pagetable, uintptr_t va,
     for (; sz != 0; va += PAGESIZE, pa += PAGESIZE, sz -= PAGESIZE) {
         int cur_index123 = (va >> (PAGEOFFBITS + PAGEINDEXBITS));
         if (cur_index123 != last_index123) {
-            l4pagetable = lookup_l4pagetable(pagetable, va, perm, allocator);
+            l4pagetable = lookup_l4pagetable(pagetable, va, perm, alloc);
             last_index123 = cur_index123;
         }
         if ((perm & PTE_P) && l4pagetable) {
@@ -59,23 +60,22 @@ int virtual_memory_map(x86_64_pagetable* pagetable, uintptr_t va,
     return 0;
 }
 
-static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable,
-                 uintptr_t va, int perm, x86_64_pagetable* (*allocator)(void)) {
+static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable, uintptr_t va, int perm, bool alloc) {
     x86_64_pagetable* pt = pagetable;
     for (int i = 0; i <= 2; ++i) {
         x86_64_pageentry_t pe = pt->entry[PAGEINDEX(va, i)];
         if (!(pe & PTE_P)) {
             // allocate a new page table page if required
-            if (!(perm & PTE_P) || !allocator) {
+            if (!(perm & PTE_P) || !alloc) {
                 return NULL;
             }
-            x86_64_pagetable* new_pt = allocator();
+            x86_64_pagetable* new_pt = aligned_alloc(PAGESIZE, sizeof(x86_64_pagetable));
             if (!new_pt) {
                 return NULL;
             }
             assert((uintptr_t) new_pt % PAGESIZE == 0);
             pt->entry[PAGEINDEX(va, i)] = pe =
-                PTE_ADDR(new_pt) | PTE_P | PTE_W | PTE_U;
+                PTE_ADDR(ka2pa((uintptr_t) new_pt)) | PTE_P | PTE_W | PTE_U;
             memset(new_pt, 0, PAGESIZE);
         }
 
@@ -88,11 +88,10 @@ static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable,
             assert(pe & PTE_U);   //   entry must allow PTE_U
         }
 
-        pt = (x86_64_pagetable*) PTE_ADDR(pe);
+        pt = (x86_64_pagetable*) pa2ka(PTE_ADDR(pe));
     }
     return pt;
 }
-
 
 // virtual_memory_lookup(pagetable, va)
 //    Returns information about the mapping of the virtual address `va` in
@@ -101,9 +100,9 @@ static x86_64_pagetable* lookup_l4pagetable(x86_64_pagetable* pagetable,
 vamapping virtual_memory_lookup(x86_64_pagetable* pagetable, uintptr_t va) {
     x86_64_pagetable* pt = pagetable;
     x86_64_pageentry_t pe = PTE_W | PTE_U | PTE_P;
-    for (int i = 0; i <= 3 && (pe & PTE_P); ++i) {
-        pe = pt->entry[PAGEINDEX(va, i)] & ~(pe & (PTE_W | PTE_U));
-        pt = (x86_64_pagetable*) PTE_ADDR(pe);
+    for (int i = 0; i <= 3 && (pe & PTE_P) && !(pe & PTE_PS); ++i) {
+        pe = pt->entry[PAGEINDEX(va, i)];
+        pt = (x86_64_pagetable*) pa2ka(PTE_ADDR(pe));
     }
     vamapping vam = { -1, (uintptr_t) -1, 0 };
     if (pe & PTE_P) {
@@ -112,4 +111,27 @@ vamapping virtual_memory_lookup(x86_64_pagetable* pagetable, uintptr_t va) {
         vam.perm = PTE_FLAGS(pe);
     }
     return vam;
+}
+
+x86_64_pagetable* new_upt(x86_64_pagetable* kpt) {
+    // Allocate a new pagetable
+    x86_64_pagetable* new_pt = aligned_alloc(PAGESIZE, sizeof(x86_64_pagetable));
+    if (new_pt == NULL) {
+        return NULL;
+    }
+
+    // Go through every mapping in the original pagetable
+    // and replicate the mapping in the new pagetable
+    for (uintptr_t i = HIGHMEM_START; i < HIGHMEM_START+MEMSIZE_PHYSICAL; ) {
+        vamapping va = virtual_memory_lookup(kpt, i);
+        if (va.pn != -1) {
+            size_t sz = va.perm & PTE_PS ? 2 * 1024 * 1024 : PAGESIZE;
+            virtual_memory_map(new_pt, i, va.pa, sz, va.perm, true);
+            i += sz;
+        } else {
+            i += PAGESIZE;
+        }
+    }
+
+    return new_pt;
 }

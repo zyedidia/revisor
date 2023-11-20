@@ -93,6 +93,12 @@ static inline void lcr3(uintptr_t val) {
     asm volatile("movq %0,%%cr3" : : "r" (val) : "memory");
 }
 
+static inline uintptr_t rcr3(void) {
+    uintptr_t val;
+    asm volatile("movq %%cr3,%0" : "=r" (val));
+    return val;
+}
+
 static inline uint32_t rcr0(void) {
     uint64_t val;
     asm volatile("movq %%cr0,%0" : "=r" (val));
