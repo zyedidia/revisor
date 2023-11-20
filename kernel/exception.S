@@ -28,6 +28,7 @@ syscall_entry:
 .globl default_int_handler
 default_int_handler:
 	pushq $0
+	pushq $0x80
 	jmp generic_exception_handler
 
 generic_exception_handler:
@@ -49,13 +50,10 @@ generic_exception_handler:
 	pushq %rcx
 	pushq %rax
 	movq %rsp, %rdi
+	movq %rsp, %r12
 	call exception
-	# `exception` should never return.
-
-
-.globl exception_return
 exception_return:
-	movq %rdi, %rsp
+	movq %r12, %rsp
 	popq %rax
 	popq %rcx
 	popq %rdx
@@ -71,7 +69,14 @@ exception_return:
 	popq %r13
 	popq %r14
 	popq %r15
-	popq %fs
-	popq %gs
+	add $8, %rsp
+	add $8, %rsp
+	// popq %fs
+	// popq %gs
 	addq $16, %rsp
 	iretq
+
+.globl exception_stack_end
+exception_stack_start:
+	.fill 0x8000,1,0
+exception_stack_end:

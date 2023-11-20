@@ -5,7 +5,7 @@
 
 .globl  kmain
 
-.code64
+.code32
 
 .globl bootstrap, init_pml4, init_pdp, init_pd
 bootstrap:
@@ -18,9 +18,40 @@ bootstrap:
 	/* give ourselves a functional stack */
 	movl $(init_stack_end - KERNEL_VMA), %esp
 
+	/* reset EFLAGS. */
+	pushl $0
+	popf
+
+	/* ensure that paging is off */
+	movl    %cr0, %eax
+	andl    $0x7fffffff, %eax
+	movl    %eax, %cr0
+
+	/* enable CR4.PAE */
+	movl    %cr4, %eax
+	orl     $0x20, %eax
+	movl    %eax, %cr4
+
 	/* load a level4 PD */
-	movq    $(init_pml4 - KERNEL_VMA), %rax
-	mov     %rax, %cr3
+	movl    $(init_pml4 - KERNEL_VMA), %eax
+	mov     %eax, %cr3
+
+	/* set IA32_EFER.LME */
+	movl    $0xc0000080, %ecx
+	rdmsr
+	/* set the PAE and SYSENTER bits */
+	orl     $0x00000101, %eax
+	wrmsr
+
+	/* enable paging */
+	movl    %cr0, %eax
+	orl     $0x80000000, %eax
+	movl    %eax, %cr0
+
+	/* at this point we should be in IA-32e mode */
+	ljmp $0x08, $(boot64 - KERNEL_VMA)
+
+.code64
 
 boot64:
 	/* do an indirect to force non-relative jmp */

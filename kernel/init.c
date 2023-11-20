@@ -65,7 +65,7 @@ static void set_gate(x86_64_gatedescriptor* gate, uint64_t type, int dpl,
     gate->gd_high = function >> 32;
 }
 
-extern uint8_t init_stack_end;
+extern uint8_t exception_stack_end;
 
 // Particular interrupt handler routines
 extern void syscall_entry(void);
@@ -93,7 +93,7 @@ void segments_init(void) {
 
     // Kernel task descriptor lets us receive interrupts
     memset(&kernel_task_descriptor, 0, sizeof(kernel_task_descriptor));
-    kernel_task_descriptor.ts_rsp[0] = (uintptr_t) &init_stack_end;
+    kernel_task_descriptor.ts_rsp[0] = (uintptr_t) &exception_stack_end;
 
     // Interrupt handler; most interrupts are effectively ignored
     memset(interrupt_descriptors, 0, sizeof(interrupt_descriptors));

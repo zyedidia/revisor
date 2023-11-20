@@ -22,20 +22,15 @@ func (vcpu *VCPU) SingleStep(onoff bool) error {
 		SingleStep = 2
 	)
 
-	var (
-		debug         [unsafe.Sizeof(debugControl{})]byte
-		setGuestDebug = IIOW(0x9b, unsafe.Sizeof(debugControl{}))
-	)
-
-	if onoff {
-		debug[2] = 0x0002 // 0000
-		debug[0] = Enable | SingleStep
+	debug := debugControl{
+		Control: Enable | SingleStep,
 	}
+	if !onoff {
+		debug.Control = 0
+	}
+	setGuestDebug := IIOW(0x9b, unsafe.Sizeof(debugControl{}))
 
-	// this is not very nice, but it is easy.
-	// And TBH, the tricks the Linux kernel people
-	// play are a lot nastier.
-	_, err := Ioctl(vcpu.fd, setGuestDebug, uintptr(unsafe.Pointer(&debug[0])))
+	_, err := Ioctl(vcpu.fd, setGuestDebug, uintptr(unsafe.Pointer(&debug)))
 
 	return err
 }

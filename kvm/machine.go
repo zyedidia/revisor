@@ -264,8 +264,7 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 		return err
 	}
 
-	// amd64 := e.Class == elf.ELFCLASS64
-	amd64 := true
+	amd64 := false
 	entry := e.Entry - kernelVMA
 	kernSize := 0
 
