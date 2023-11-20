@@ -125,6 +125,9 @@ void segments_init(void) {
                      "m" (idt)
                  : "memory");
 
+    asm volatile("movw %%ax, %%fs; movw %%ax, %%gs"
+                 : : "a" ((uint16_t) SEGSEL_KERN_DATA));
+
     // Set up control registers: check alignment
     uint32_t cr0 = rcr0();
     cr0 |= CR0_PE | CR0_PG | CR0_WP | CR0_AM | CR0_MP | CR0_NE;
@@ -145,4 +148,19 @@ void kinit(void) {
     sbrk_init();
     void* tls = malloc(4096);
     wrmsr(MSR_IA32_GS_BASE, (uint64_t) tls);
+}
+
+void proc_init(struct proc* p) {
+    memset(&p->p_registers, 0, sizeof(p->p_registers));
+
+    p->p_registers.reg_cs = SEGSEL_APP_CODE | 3;
+    p->p_registers.reg_fs = SEGSEL_APP_DATA | 3;
+    p->p_registers.reg_gs = SEGSEL_APP_DATA | 3;
+    p->p_registers.reg_ss = SEGSEL_APP_DATA | 3;
+    p->p_registers.reg_rflags = EFLAGS_IF;
+}
+
+void set_pagetable(x86_64_pagetable* pagetable) {
+    assert(PAGEOFFSET(pagetable) == 0); // must be page aligned
+    lcr3((uintptr_t) pagetable);
 }

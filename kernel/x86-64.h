@@ -1,6 +1,49 @@
 #pragma once
 
 #include <stdint.h>
+#include <assert.h>
+
+// Paged memory constants
+#define PAGEOFFBITS     12                   // # bits in page offset
+#define PAGESIZE        (1 << PAGEOFFBITS)   // Size of page in bytes
+#define PAGEINDEXBITS   9                    // # bits in a page index level
+#define NPAGETABLEENTRIES (1 << PAGEINDEXBITS) // # entries in page table page
+#define PAGENUMBER(ptr) ((int) ((uintptr_t) (ptr) >> PAGEOFFBITS))
+#define PAGEADDRESS(pn) ((uintptr_t) (pn) << PAGEOFFBITS)
+
+// Page table entry type and page table type
+typedef uint64_t x86_64_pageentry_t;
+typedef struct __attribute__((aligned(PAGESIZE))) x86_64_pagetable {
+    x86_64_pageentry_t entry[NPAGETABLEENTRIES];
+} x86_64_pagetable;
+
+// Parts of a paged address: page index, page offset
+static inline int pageindex(uintptr_t addr, int level) {
+    assert(level >= 0 && level <= 3);
+    return (int) (addr >> (PAGEOFFBITS + (3 - level) * PAGEINDEXBITS)) & 0x1FF;
+}
+#define PAGEINDEX(addr, level) (pageindex((uintptr_t) (addr), (level)))
+#define L1PAGEINDEX(addr)      (pageindex((uintptr_t) (addr), 0))
+#define L2PAGEINDEX(addr)      (pageindex((uintptr_t) (addr), 1))
+#define L3PAGEINDEX(addr)      (pageindex((uintptr_t) (addr), 2))
+#define L4PAGEINDEX(addr)      (pageindex((uintptr_t) (addr), 3))
+#define PAGEOFFMASK            ((uintptr_t) (PAGESIZE - 1))
+#define PAGEOFFSET(addr)       ((uintptr_t) (addr) & PAGEOFFMASK)
+
+// The physical address contained in a page table entry
+#define PTE_ADDR(pageentry)     ((uintptr_t) (pageentry) & ~0xFFFUL)
+
+// Page table entry flags
+#define PTE_FLAGS(pageentry)    ((x86_64_pageentry_t) (pageentry) & 0xFFFU)
+// - Permission flags: define whether page is accessible
+#define PTE_P   ((x86_64_pageentry_t) 1)    // entry is Present
+#define PTE_W   ((x86_64_pageentry_t) 2)    // entry is Writeable
+#define PTE_U   ((x86_64_pageentry_t) 4)    // entry is User-accessible
+// - Accessed flags: automatically turned on by processor
+#define PTE_A   ((x86_64_pageentry_t) 32)   // entry was Accessed (read/written)
+#define PTE_D   ((x86_64_pageentry_t) 64)   // entry was Dirtied (written)
+#define PTE_PS  ((x86_64_pageentry_t) 128)  // entry has a large Page Size
+// - There are other flags too!
 
 // Interrupt numbers
 #define INT_DIVIDE      0x0         // Divide error
@@ -43,6 +86,11 @@ static inline void lidt(void* p) {
 static inline void lcr0(uint32_t val) {
     uint64_t xval = val;
     asm volatile("movq %0,%%cr0" : : "r" (xval));
+}
+
+static inline void lcr3(uintptr_t val) {
+    asm volatile("" : : : "memory");
+    asm volatile("movq %0,%%cr3" : : "r" (val) : "memory");
 }
 
 static inline uint32_t rcr0(void) {

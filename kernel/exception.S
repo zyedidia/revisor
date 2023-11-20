@@ -50,10 +50,11 @@ generic_exception_handler:
 	pushq %rcx
 	pushq %rax
 	movq %rsp, %rdi
-	movq %rsp, %r12
 	call exception
+
+.globl exception_return
 exception_return:
-	movq %r12, %rsp
+	movq %rdi, %rsp
 	popq %rax
 	popq %rcx
 	popq %rdx
@@ -69,11 +70,8 @@ exception_return:
 	popq %r13
 	popq %r14
 	popq %r15
-	add $8, %rsp
-	add $8, %rsp
-	// popq %fs
-	// popq %gs
-	addq $16, %rsp
+	popq %fs
+	addq $24, %rsp
 	iretq
 
 .globl exception_stack_end
