@@ -1,12 +1,20 @@
 package kvm
 
-const (
-	// These *could* be in kvm, but we'll see.
+// RunData defines the data used to run a VM.
+type RunData struct {
+	RequestInterruptWindow     uint8
+	ImmediateExit              uint8
+	_                          [6]uint8
+	ExitReason                 uint32
+	ReadyForInterruptInjection uint8
+	IfFlag                     uint8
+	_                          [2]uint8
+	CR8                        uint64
+	ApicBase                   uint64
+	Data                       [32]uint64
+}
 
-	// golangci-lint is completely wrong about these names.
-	// Control Register Paging Enable for example:
-	// golang style requires all letters in an acronym to be caps.
-	// CR0 bits.
+const (
 	CR0xPE = 1
 	CR0xMP = (1 << 1)
 	CR0xEM = (1 << 2)
