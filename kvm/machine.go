@@ -41,7 +41,7 @@ func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
 		return nil, err
 	}
 
-	if err := vm.SetIdentityMapAddr(kvmIdentityMapStart); err != nil {
+	if err := vm.init(); err != nil {
 		return nil, err
 	}
 
@@ -231,7 +231,7 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 		return false, nil
 	case ExitMMIO:
 		fmt.Println("MMIO exit")
-		return true, nil
+		return false, nil
 	case ExitUnknown:
 		return true, nil
 	case ExitIntr:

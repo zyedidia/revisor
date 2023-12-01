@@ -6,4 +6,7 @@ const (
 
 	kvmRegArmCoprocShift = 16
 	kvmRegArmCore        = 0x0010 << kvmRegArmCoprocShift
+
+	kvmArmVcpuInit        = 0xAE
+	kvmArmPreferredTarget = 0xAF
 )

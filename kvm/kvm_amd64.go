@@ -1,5 +1,7 @@
 package kvm
 
+import "unsafe"
+
 const (
 	CR0xPE = 1
 	CR0xMP = (1 << 1)
@@ -48,3 +50,10 @@ const (
 	PDE64xPS       = (1 << 7)
 	PDE64xG        = (1 << 8)
 )
+
+// SetIdentityMapAddr sets the address of a 4k-sized-page for a vm.
+func (vm *vm) SetIdentityMapAddr(addr uint32) error {
+	_, err := Ioctl(vm.fd, IIOW(kvmSetIdentityMapAddr, 8), uintptr(unsafe.Pointer(&addr)))
+
+	return err
+}

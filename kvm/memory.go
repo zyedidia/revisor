@@ -17,10 +17,3 @@ func (vm *vm) SetUserspaceMemoryRegion(region *UserspaceMemoryRegion) error {
 	return err
 
 }
-
-// SetIdentityMapAddr sets the address of a 4k-sized-page for a vm.
-func (vm *vm) SetIdentityMapAddr(addr uint32) error {
-	_, err := Ioctl(vm.fd, IIOW(kvmSetIdentityMapAddr, 8), uintptr(unsafe.Pointer(&addr)))
-
-	return err
-}

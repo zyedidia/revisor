@@ -1,6 +1,9 @@
 package kvm
 
-import "unsafe"
+import (
+	"fmt"
+	"unsafe"
+)
 
 type UserRegs struct {
 	Regs   [31]uint64
@@ -13,16 +16,19 @@ type UserRegs struct {
 
 type KvmOneReg struct {
 	id   uint64
-	addr uint64
+	addr *uint64
 }
 
 func (vcpu *vcpu) setReg(id uintptr, val uint64) error {
-	reg := &KvmOneReg{
+	reg := KvmOneReg{
 		id:   uint64(id),
-		addr: val,
+		addr: &val,
 	}
-	_, err := Ioctl(vcpu.fd, IIOW(kvmSetOneReg, unsafe.Sizeof(uint64(0))), uintptr(unsafe.Pointer(reg)))
-	return err
+	_, err := Ioctl(vcpu.fd, IIOW(kvmSetOneReg, unsafe.Sizeof(KvmOneReg{})), uintptr(unsafe.Pointer(&reg)))
+	if err != nil {
+		return fmt.Errorf("KVM_SET_ONE_REG: %w", err)
+	}
+	return nil
 }
 
 func (vcpu *vcpu) SetPc(pc uint64) error {

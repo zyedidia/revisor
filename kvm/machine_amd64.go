@@ -4,11 +4,17 @@ const (
 	kvmTSSStart = kvmIdentityMapStart + kvmIdentityMapSize
 )
 
-func (m *Machine) init() error {
+func (vm *vm) init() error {
+	if err := vm.SetIdentityMapAddr(kvmIdentityMapStart); err != nil {
+		return err
+	}
 	if err := m.vm.setTSSAddr(kvmTSSStart); err != nil {
 		return err
 	}
+	return nil
+}
 
+func (m *Machine) init() error {
 	// initialize cpuids
 	for i := range m.runs {
 		if err := m.initCPUID(i); err != nil {
