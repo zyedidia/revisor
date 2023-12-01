@@ -43,3 +43,20 @@ func (m *Machine) SetupRegs(pc, cmdline uint64) error {
 	}
 	return nil
 }
+
+func (m *Machine) hypercall(cpu int) error {
+	vcpu := m.vm.vcpus[cpu]
+	r0, err := m.handler.Hypercall(m, cpu, vcpu.GetReg(8), vcpu.GetReg(0), vcpu.GetReg(1), vcpu.GetReg(2), vcpu.GetReg(3), vcpu.GetReg(4), vcpu.GetReg(5))
+	if err != nil {
+		return err
+	}
+	if err := vcpu.SetReg(0, r0); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Machine) VtoP(cpu int, v uint64) uint64 {
+	// TODO: arm64 virtual to physical translation
+	return v
+}

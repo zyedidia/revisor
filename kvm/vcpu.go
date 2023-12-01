@@ -3,7 +3,6 @@ package kvm
 import (
 	"errors"
 	"syscall"
-	"unsafe"
 )
 
 type vcpu struct {
@@ -20,36 +19,4 @@ func (vcpu *vcpu) Run() error {
 	}
 
 	return err
-}
-
-type Translation struct {
-	// input
-	LinearAddress uint64
-
-	// output
-	PhysicalAddress uint64
-	Valid           uint8
-	Writeable       uint8
-	Usermode        uint8
-	_               [5]uint8
-}
-
-// Translate translates a virtual address according to the vcpu’s current address translation mode.
-func (vcpu *vcpu) Translate(t *Translation) error {
-	_, err := Ioctl(vcpu.fd,
-		IIOWR(kvmTranslate, unsafe.Sizeof(Translation{})),
-		uintptr(unsafe.Pointer(t)))
-
-	return err
-}
-
-func (vcpu *vcpu) VtoP(v uint64) uint64 {
-	t := &Translation{
-		LinearAddress: v,
-	}
-	err := vcpu.Translate(t)
-	if err != nil {
-		panic(err)
-	}
-	return t.PhysicalAddress
 }

@@ -3,7 +3,12 @@ package revisor
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"io/fs"
+	"log"
 	"os"
+
+	"github.com/zyedidia/revisor/kvm"
 )
 
 const (
@@ -47,79 +52,78 @@ func (c *Container) addFile(f *os.File) (uint64, error) {
 	return fd, nil
 }
 
-// func (c *Container) Hypercall(cpu *kvm.VCPU, regs *kvm.Regs, mem []byte) bool {
-// 	switch regs.RAX {
-// 	case hypWrite:
-// 		fd := regs.RDI
-// 		ptr := cpu.VtoP(regs.RSI)
-// 		size := regs.RDX
-// 		if f, ok := c.fdtable[fd]; !ok {
-// 			regs.RAX = errFail
-// 		} else {
-// 			fmt.Fprint(f, string(mem[ptr:ptr+size]))
-// 			regs.RAX = size
-// 		}
-// 	case hypLseek:
-// 		fd := regs.RDI
-// 		off := int64(regs.RSI)
-// 		whence := int(regs.RDX)
-//
-// 		if f, ok := c.fdtable[fd]; !ok {
-// 			regs.RAX = errFail
-// 		} else {
-// 			n, err := f.Seek(off, whence)
-// 			if err != nil {
-// 				regs.RAX = errFail
-// 				break
-// 			}
-// 			regs.RAX = uint64(n)
-// 		}
-// 	case hypOpen:
-// 		name := cstring(mem[cpu.VtoP(regs.RDI):])
-// 		flags := regs.RSI
-// 		mode := regs.RDX
-//
-// 		f, err := os.OpenFile(name, int(flags), fs.FileMode(mode))
-// 		if err != nil {
-// 			regs.RAX = errFail
-// 			break
-// 		}
-// 		fd, err := c.addFile(f)
-// 		if err != nil {
-// 			log.Println(err)
-// 			regs.RAX = errFail
-// 			break
-// 		}
-// 		regs.RAX = fd
-// 	case hypRead:
-// 		fd := regs.RDI
-// 		ptr := cpu.VtoP(regs.RSI)
-// 		size := regs.RDX
-// 		if f, ok := c.fdtable[fd]; !ok {
-// 			regs.RAX = errFail
-// 		} else {
-// 			n, err := f.Read(mem[ptr : ptr+size])
-// 			if err != nil {
-// 				regs.RAX = errFail
-// 				break
-// 			}
-// 			regs.RAX = uint64(n)
-// 		}
-// 	case hypClose:
-// 		fd := regs.RDI
-// 		if _, ok := c.fdtable[fd]; !ok {
-// 			regs.RAX = errFail
-// 		} else {
-// 			delete(c.fdtable, fd)
-// 			regs.RAX = 0
-// 		}
-// 	case hypExit:
-// 		return true
-// 	default:
-// 		fmt.Printf("%x: unknown hypercall: %d\n", regs.RIP, regs.RAX)
-// 	}
-// 	return false
-// }
+var (
+	ErrExit             = errors.New("exited")
+	ErrUnknownHypercall = errors.New("unknown hypercall")
+)
+
+func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, a5 uint64) (uint64, error) {
+	switch num {
+	case hypWrite:
+		fd := a0
+		ptr := m.VtoP(cpu, a1)
+		size := a2
+		if f, ok := c.fdtable[fd]; !ok {
+			return errFail, nil
+		} else {
+			fmt.Fprint(f, string(m.Slice(ptr, ptr+size)))
+			return size, nil
+		}
+	case hypLseek:
+		fd := a0
+		off := int64(a1)
+		whence := int(a2)
+
+		if f, ok := c.fdtable[fd]; !ok {
+			return errFail, nil
+		} else {
+			n, err := f.Seek(off, whence)
+			if err != nil {
+				return errFail, nil
+			}
+			return uint64(n), nil
+		}
+	case hypOpen:
+		name := cstring(m.SliceEnd(m.VtoP(cpu, a0)))
+		flags := a1
+		mode := a2
+
+		f, err := os.OpenFile(name, int(flags), fs.FileMode(mode))
+		if err != nil {
+			return errFail, nil
+		}
+		fd, err := c.addFile(f)
+		if err != nil {
+			log.Println(err)
+			return errFail, nil
+		}
+		return fd, nil
+	case hypRead:
+		fd := a0
+		ptr := m.VtoP(cpu, a1)
+		size := a2
+		if f, ok := c.fdtable[fd]; !ok {
+			return errFail, nil
+		} else {
+			n, err := f.Read(m.Slice(ptr, ptr+size))
+			if err != nil {
+				return errFail, nil
+			}
+			return uint64(n), nil
+		}
+	case hypClose:
+		fd := a0
+		if _, ok := c.fdtable[fd]; !ok {
+			return errFail, nil
+		} else {
+			delete(c.fdtable, fd)
+			return 0, nil
+		}
+	case hypExit:
+		return 0, ErrExit
+	}
+	return 0, fmt.Errorf("%w: %d", ErrUnknownHypercall, num)
+}
 
 func cstring(data []byte) string {
 	buf := &bytes.Buffer{}

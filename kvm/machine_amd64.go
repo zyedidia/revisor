@@ -1,5 +1,7 @@
 package kvm
 
+import "unsafe"
+
 const (
 	kvmTSSStart = kvmIdentityMapStart + kvmIdentityMapSize
 )
@@ -8,7 +10,7 @@ func (vm *vm) init() error {
 	if err := vm.SetIdentityMapAddr(kvmIdentityMapStart); err != nil {
 		return err
 	}
-	if err := m.vm.setTSSAddr(kvmTSSStart); err != nil {
+	if err := vm.setTSSAddr(kvmTSSStart); err != nil {
 		return err
 	}
 	return nil
@@ -70,4 +72,54 @@ func (m *Machine) initCPUID(cpu int) error {
 	}
 
 	return nil
+}
+
+func (m *Machine) hypercall(cpu int) error {
+	vcpu := m.vm.vcpus[cpu]
+	regs, err := vcpu.GetRegs()
+	if err != nil {
+		return err
+	}
+	r0, err := m.handler.Hypercall(m, cpu, regs.Rax, regs.Rdi, regs.Rsi, regs.Rdx, regs.Rcx, regs.R8, regs.R9)
+	if err != nil {
+		return err
+	}
+	regs.Rax = r0
+	if err := vcpu.SetRegs(regs); err != nil {
+		return err
+	}
+	return nil
+}
+
+type Translation struct {
+	// input
+	LinearAddress uint64
+
+	// output
+	PhysicalAddress uint64
+	Valid           uint8
+	Writeable       uint8
+	Usermode        uint8
+	_               [5]uint8
+}
+
+// Translate translates a virtual address according to the vcpu’s current address translation mode.
+func (vcpu *vcpu) Translate(t *Translation) error {
+	_, err := Ioctl(vcpu.fd,
+		IIOWR(kvmTranslate, unsafe.Sizeof(Translation{})),
+		uintptr(unsafe.Pointer(t)))
+
+	return err
+}
+
+func (m *Machine) VtoP(cpu int, v uint64) uint64 {
+	vcpu := m.vm.vcpus[cpu]
+	t := &Translation{
+		LinearAddress: v,
+	}
+	err := vcpu.Translate(t)
+	if err != nil {
+		panic(err)
+	}
+	return t.PhysicalAddress
 }

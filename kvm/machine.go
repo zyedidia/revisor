@@ -18,19 +18,22 @@ const (
 	bootParamAddr = 0x10000
 	cmdlineAddr   = 0x20000
 
-	initrdAddr  = 0xf000000
-	highMemBase = 0x100000
 	// kernelVMA   = 0xffffffff80000000
 	kernelVMA = 0
 )
 
-type Machine struct {
-	kvmfd uintptr
-	vm    *vm
-	runs  []*RunData
+type HypercallHandler interface {
+	Hypercall(machine *Machine, cpu int, number, a0, a1, a2, a3, a4, a5 uint64) (r0 uint64, err error)
 }
 
-func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
+type Machine struct {
+	kvmfd   uintptr
+	vm      *vm
+	runs    []*RunData
+	handler HypercallHandler
+}
+
+func NewMachine(kvmPath string, ncpus int, memSize int, handler HypercallHandler) (*Machine, error) {
 	devkvm, err := os.OpenFile(kvmPath, os.O_RDWR, 0o644)
 	if err != nil {
 		return nil, err
@@ -51,9 +54,10 @@ func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
 	}
 
 	m := &Machine{
-		kvmfd: kvmfd,
-		vm:    vm,
-		runs:  make([]*RunData, ncpus),
+		kvmfd:   kvmfd,
+		vm:      vm,
+		runs:    make([]*RunData, ncpus),
+		handler: handler,
 	}
 
 	for cpu := 0; cpu < ncpus; cpu++ {
@@ -81,17 +85,11 @@ func NewMachine(kvmPath string, ncpus int, memSize int) (*Machine, error) {
 		return nil, err
 	}
 
+	fmt.Println(CheckExtension(kvmfd, CapNRMemSlots))
+
 	// TODO: poison memory
 
 	return m, nil
-}
-
-func (m *Machine) Translate(cpu int, vaddr uint64) (Translation, error) {
-	tr := &Translation{
-		LinearAddress: vaddr,
-	}
-	err := m.vm.vcpus[cpu].Translate(tr)
-	return *tr, err
 }
 
 func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
@@ -212,26 +210,15 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 	vcpu.Run()
 	exit := ExitType(m.runs[cpu].ExitReason)
 
-	// TODO: hypercalls
-	// 	regs, err := vcpu.GetRegs()
-	// 	if err != nil {
-	// 		return false, err
-	// 	}
-	// 	exited := m.handler.Hypercall(&m.vm.vcpus[cpu], regs, m.vm.mem)
-	// 	if exited {
-	// 		return false, nil
-	// 	}
-	// 	if err := vcpu.SetRegs(regs); err != nil {
-	// 		return false, err
-	// 	}
-	// 	return true, nil
-
 	switch exit {
 	case ExitHlt:
 		return false, nil
 	case ExitMMIO:
-		fmt.Println("MMIO exit")
-		return false, nil
+		err := m.hypercall(cpu)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
 	case ExitUnknown:
 		return true, nil
 	case ExitIntr:
@@ -265,12 +252,16 @@ func (m *Machine) ReadAt(b []byte, off int64) (int, error) {
 
 // ReadBytes reads bytes from the CPUs virtual address space.
 func (m *Machine) ReadBytes(cpu int, b []byte, vaddr uint64) (int, error) {
-	pa, err := m.Translate(cpu, vaddr)
-	if err != nil {
-		return -1, err
-	}
+	pa := m.VtoP(cpu, vaddr)
+	return m.ReadAt(b, int64(pa))
+}
 
-	return m.ReadAt(b, int64(pa.PhysicalAddress))
+func (m *Machine) SliceEnd(start uint64) []byte {
+	return m.vm.mem[start:]
+}
+
+func (m *Machine) Slice(start, end uint64) []byte {
+	return m.vm.mem[start:end]
 }
 
 func (m *Machine) NCPU() int {
