@@ -1,11 +1,10 @@
 package kvm
 
 import (
-	"fmt"
 	"unsafe"
 )
 
-func (vcpu *vcpu) initRegs(rip, bp uint64) error {
+func (vcpu *vcpu) initRegs(rip, bp, memsz uint64) error {
 	regs, err := vcpu.GetRegs()
 	if err != nil {
 		return err
@@ -16,6 +15,7 @@ func (vcpu *vcpu) initRegs(rip, bp uint64) error {
 	regs.Rip = rip
 	// Create stack which will grow down.
 	regs.Rsi = bp
+	regs.Rdi = memsz
 
 	if err := vcpu.SetRegs(regs); err != nil {
 		return err
@@ -24,32 +24,28 @@ func (vcpu *vcpu) initRegs(rip, bp uint64) error {
 	return nil
 }
 
-func (vcpu *vcpu) initSregs(mem []byte, amd64 bool) error {
+func (vcpu *vcpu) initSregs(mem []byte) error {
 	sregs, err := vcpu.GetSregs()
 	if err != nil {
 		return err
 	}
 
-	if !amd64 {
-		// set all segment flat
-		sregs.Cs.Base, sregs.Cs.Limit, sregs.Cs.G = 0, 0xFFFFFFFF, 1
-		sregs.Ds.Base, sregs.Ds.Limit, sregs.Ds.G = 0, 0xFFFFFFFF, 1
-		sregs.Fs.Base, sregs.Fs.Limit, sregs.Fs.G = 0, 0xFFFFFFFF, 1
-		sregs.Gs.Base, sregs.Gs.Limit, sregs.Gs.G = 0, 0xFFFFFFFF, 1
-		sregs.Es.Base, sregs.Es.Limit, sregs.Es.G = 0, 0xFFFFFFFF, 1
-		sregs.Ss.Base, sregs.Ss.Limit, sregs.Ss.G = 0, 0xFFFFFFFF, 1
+	// set all segment flat
+	sregs.Cs.Base, sregs.Cs.Limit, sregs.Cs.G = 0, 0xFFFFFFFF, 1
+	sregs.Ds.Base, sregs.Ds.Limit, sregs.Ds.G = 0, 0xFFFFFFFF, 1
+	sregs.Fs.Base, sregs.Fs.Limit, sregs.Fs.G = 0, 0xFFFFFFFF, 1
+	sregs.Gs.Base, sregs.Gs.Limit, sregs.Gs.G = 0, 0xFFFFFFFF, 1
+	sregs.Es.Base, sregs.Es.Limit, sregs.Es.G = 0, 0xFFFFFFFF, 1
+	sregs.Ss.Base, sregs.Ss.Limit, sregs.Ss.G = 0, 0xFFFFFFFF, 1
 
-		sregs.Cs.Db, sregs.Ss.Db = 1, 1
-		sregs.Cr0 |= 1 // protected mode
+	sregs.Cs.Db, sregs.Ss.Db = 1, 1
+	sregs.Cr0 |= 1 // protected mode
 
-		if err := vcpu.SetSregs(sregs); err != nil {
-			return err
-		}
-
-		return nil
+	if err := vcpu.SetSregs(sregs); err != nil {
+		return err
 	}
 
-	return fmt.Errorf("expected kernel to boot into protected mode")
+	return nil
 }
 
 // Regs are registers for both 386 and amd64.

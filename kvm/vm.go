@@ -37,13 +37,25 @@ func NewVM(kvmfd uintptr, memSize int64) (*vm, error) {
 	}, nil
 }
 
-func (vm *vm) InitMemory() error {
-	return vm.SetUserspaceMemoryRegion(&UserspaceMemoryRegion{
+func (vm *vm) initMemory() error {
+	if err := vm.SetUserspaceMemoryRegion(&UserspaceMemoryRegion{
 		Slot:          0,
 		GuestPhysAddr: 0,
 		MemorySize:    uint64(len(vm.mem)),
 		UserspaceAddr: uint64(uintptr(unsafe.Pointer(&vm.mem[0]))),
-	})
+	}); err != nil {
+		return err
+	}
+	if err := vm.SetUserspaceMemoryRegion(&UserspaceMemoryRegion{
+		Slot:          1,
+		GuestPhysAddr: uint64(len(vm.mem)),
+		MemorySize:    4096,
+		UserspaceAddr: 0, // null
+		Flags:         kvmMemReadonly,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (vm *vm) addVCPU() error {

@@ -23,9 +23,7 @@ func main() {
 		log.Fatal("no input")
 	}
 
-	container := revisor.NewContainer()
-
-	m, err := kvm.NewMachine("/dev/kvm", 1, gb(16), container)
+	m, err := kvm.NewMachine("/dev/kvm", 1, gb(1))
 	if err != nil {
 		log.Fatal(err)
 	}

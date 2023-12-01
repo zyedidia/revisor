@@ -1,0 +1,38 @@
+package kvm
+
+import "unsafe"
+
+type UserRegs struct {
+	Regs   [31]uint64
+	Sp     uint64
+	Pc     uint64
+	PState uint64
+	SpEl1  uint64
+	ElrEl1 uint64
+}
+
+type KvmOneReg struct {
+	id   uint64
+	addr uint64
+}
+
+func (vcpu *vcpu) setReg(id uintptr, val uint64) error {
+	reg := &KvmOneReg{
+		id:   uint64(id),
+		addr: val,
+	}
+	_, err := Ioctl(vcpu.fd, IIOW(kvmSetOneReg, unsafe.Sizeof(uint64(0))), uintptr(unsafe.Pointer(reg)))
+	return err
+}
+
+func (vcpu *vcpu) SetPc(pc uint64) error {
+	offset := unsafe.Offsetof(UserRegs{}.Pc) / 4
+	id := kvmRegArm64 | kvmRegSizeU64 | kvmRegArmCore | offset
+	return vcpu.setReg(id, pc)
+}
+
+func (vcpu *vcpu) SetReg(i int, val uint64) error {
+	offset := (unsafe.Offsetof(UserRegs{}.Regs) + uintptr(i)*8) / 4
+	id := kvmRegArm64 | kvmRegSizeU64 | kvmRegArmCore | offset
+	return vcpu.setReg(id, val)
+}

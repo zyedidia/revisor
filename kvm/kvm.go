@@ -58,6 +58,9 @@ const (
 	kvmX86SetupMCE           = 0x9C
 	kvmX86GetMCECapSupported = 0x9D
 
+	kvmGetOneReg = 0xAB
+	kvmSetOneReg = 0xAC
+
 	kvmGetPIT2 = 0x9F
 	kvmSetPIT2 = 0xA0
 
@@ -79,6 +82,12 @@ const (
 	kvmSetSRegs2 = 0xCD
 
 	kvmCreateDev = 0xE0
+
+	kvmMemReadonly = 1 << 1
+
+	// Identity map is one page region after TSS.
+	kvmIdentityMapStart = 0x10000
+	kvmIdentityMapSize  = 4 << 10
 )
 
 type ExitType uint
@@ -106,10 +115,28 @@ const (
 	numInterrupts = 0x100
 )
 
+// RunData defines the data used to run a VM.
+type RunData struct {
+	RequestInterruptWindow     uint8
+	ImmediateExit              uint8
+	_                          [6]uint8
+	ExitReason                 uint32
+	ReadyForInterruptInjection uint8
+	IfFlag                     uint8
+	_                          [2]uint8
+	Cr8                        uint64
+	ApicBase                   uint64
+	Data                       [32]uint64
+}
+
 func getAPIVersion(kvmfd uintptr) (uintptr, error) {
 	return Ioctl(kvmfd, IIO(kvmGetAPIVersion), uintptr(0))
 }
 
 func createVM(kvmfd uintptr) (uintptr, error) {
 	return Ioctl(kvmfd, IIO(kvmCreateVM), uintptr(0))
+}
+
+func getVCPUMMmapSize(kvmfd uintptr) (uintptr, error) {
+	return Ioctl(kvmfd, IIO(kvmGetVCPUMMapSize), uintptr(0))
 }

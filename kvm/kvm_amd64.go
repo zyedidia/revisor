@@ -1,19 +1,5 @@
 package kvm
 
-// RunData defines the data used to run a VM.
-type RunData struct {
-	RequestInterruptWindow     uint8
-	ImmediateExit              uint8
-	_                          [6]uint8
-	ExitReason                 uint32
-	ReadyForInterruptInjection uint8
-	IfFlag                     uint8
-	_                          [2]uint8
-	CR8                        uint64
-	ApicBase                   uint64
-	Data                       [32]uint64
-}
-
 const (
 	CR0xPE = 1
 	CR0xMP = (1 << 1)
