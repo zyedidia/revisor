@@ -1,4 +1,7 @@
+local arch = cli.arch or "amd64"
+
 return b{
-    $ test.elf: test.s
+    $ all:VB: test_$arch.elf
+    $ %.elf: %.s
         gcc -nostdlib -O2 $input -o $output -static
 }
