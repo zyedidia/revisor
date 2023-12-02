@@ -150,8 +150,8 @@ func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
 			m.SingleStep(trace)
 		}
 
-		wg.Done()
 		fmt.Printf("CPU %d exited (err=%v)\n\r", cpu, err)
+		wg.Done()
 	}(cpu)
 }
 

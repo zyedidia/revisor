@@ -1,6 +1,6 @@
 local knit = require("knit")
 
-local arch = "arm64"
+local arch = cli.arch or "amd64"
 
 local csrc = knit.join(knit.glob("*.c"), knit.glob(f"arch/$arch/*.c"))
 local ssrc = knit.join(knit.glob("*.S"), knit.glob(f"arch/$arch/*.S"))
