@@ -20,6 +20,7 @@ func (m *Machine) init() error {
 	if err != nil {
 		return fmt.Errorf("KVM_ARM_PREFERRED_TARGET: %w", err)
 	}
+	init.features[0] |= 1 << kvmArmVcpuPsci0_2
 	for _, vcpu := range m.vm.vcpus {
 		_, err = Ioctl(vcpu.fd, IIOW(kvmArmVcpuInit, unsafe.Sizeof(VcpuInit{})), uintptr(unsafe.Pointer(&init)))
 		if err != nil {

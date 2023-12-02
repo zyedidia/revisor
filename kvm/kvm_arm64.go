@@ -9,4 +9,6 @@ const (
 
 	kvmArmVcpuInit        = 0xAE
 	kvmArmPreferredTarget = 0xAF
+	kvmArmVcpuFinalize    = 0xC2
+	kvmArmVcpuPsci0_2     = 2
 )

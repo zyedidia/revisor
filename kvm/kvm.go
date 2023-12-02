@@ -123,7 +123,7 @@ type RunData struct {
 	ExitReason                 uint32
 	ReadyForInterruptInjection uint8
 	IfFlag                     uint8
-	_                          [2]uint8
+	Flags                      uint16
 	Cr8                        uint64
 	ApicBase                   uint64
 	Data                       [32]uint64

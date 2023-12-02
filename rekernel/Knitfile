@@ -6,7 +6,7 @@ local obj = knit.join(knit.extrepl(csrc, ".c", ".o"), knit.extrepl(ssrc, ".S", "
 obj = knit.prefix(obj, ".")
 
 local picolib := build/install
-local flags := -nostdlib -O2 -L$picolib/lib -I$picolib/include -lc -fno-pic -lgcc
+local flags := -Wall -nostdlib -O2 -L$picolib/lib -I$picolib/include -lc -lgcc
 
 return b{
     $ kernel.elf: $obj link/kernel.ld[I]

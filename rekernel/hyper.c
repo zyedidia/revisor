@@ -26,6 +26,10 @@ int lseek(int file, uint64_t off, int whence) {
     return hypercall3(file, off, whence, HYP_LSEEK);
 }
 
+int lseek64(int file, uint64_t off, int whence) {
+    return hypercall3(file, off, whence, HYP_LSEEK);
+}
+
 int write(int file, char* ptr, int len) {
     return hypercall3(file, (uintptr_t) ptr, len, HYP_WRITE);
 }
@@ -37,4 +41,12 @@ int read(int file, char* ptr, int len) {
 void exit(int status) {
     hypercall1(status, HYP_EXIT);
     while (1) {}
+}
+
+int isatty(int file) {
+    return 1;
+}
+
+int fstat(int file, void* st) {
+    return -1;
 }
