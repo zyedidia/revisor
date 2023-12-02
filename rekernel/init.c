@@ -11,6 +11,4 @@ void kinit(uint8_t* hypdev) {
     hypcall_dev = hypdev;
 
     arch_init();
-
-    sbrk_init();
 }

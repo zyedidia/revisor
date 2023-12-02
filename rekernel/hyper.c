@@ -1,17 +1,22 @@
+#include <string.h>
+#include <errno.h>
+
 #include "hyper.h"
 #include "arch/hypercall.h"
 
-uint8_t* brkp;
 extern uint8_t _end;
+uint8_t* brkp = &_end;
 
-void sbrk_init() {
-    brkp = &_end;
-}
-
-void* sbrk(int incr) {
-    uint8_t* prev_brkp = brkp;
+void* sbrk(size_t incr) {
+    if (incr < 0) {
+        if ((size_t) (brkp - &_end) < (size_t) (-incr)) {
+            errno = ENOMEM;
+            return (void *) -1;
+        }
+    }
+    void *ret = brkp;
     brkp += incr;
-    return (void*) prev_brkp;
+    return ret;
 }
 
 int open(const char* name, int flags, int mode) {

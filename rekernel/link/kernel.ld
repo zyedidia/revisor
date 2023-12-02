@@ -3,46 +3,51 @@ ENTRY(_start)
 SECTIONS {
 	. = 0x80000;
 
+    .init : {
+        KEEP (*(.text.init.enter))
+        KEEP (*(.data.init.enter))
+        KEEP (*(SORT_BY_NAME(.init) SORT_BY_NAME(.init.*)))
+    }
+
 	.text : {
 		_code = .;
 		*(.text*)
 		*(.gnu.linkonce.t*)
-		. = ALIGN(0x1000);
+        KEEP(*(.fini*))
+
+        . = ALIGN(8);
+
+        PROVIDE_HIDDEN ( __preinit_array_start = . );
+        KEEP (*(.preinit_array))
+        PROVIDE_HIDDEN ( __preinit_array_end = . );
+
+        PROVIDE_HIDDEN ( __init_array_start = . );
+        KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+        KEEP (*(.init_array .ctors))
+        PROVIDE_HIDDEN ( __init_array_end = . );
+
+        PROVIDE_HIDDEN ( __fini_array_start = . );
+        KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+        KEEP (*(.fini_array .dtors))
+        PROVIDE_HIDDEN ( __fini_array_end = . );
 	}
 
 	.rodata : {
 		_rodata = .;
 		*(.rodata*)
 		*(.gnu.linkonce.r*)
+        *(.srodata*)
 
-        . = ALIGN(8);
-        __CTOR_LIST__ = .;
-        *(.ctors)
-        __CTOR_END__ = .;
-
-        . = ALIGN(8);
-        __DTOR_LIST__ = .;
-        *(.dtors)
-        __DTOR_END__ = .;
-
-        . = ALIGN(8);
-        __INIT_LIST__ = .;
-        KEEP (*(.init_array))
-        __INIT_END__ = .;
-
-        . = ALIGN(8);
-        __FINI_LIST__ = .;
-        KEEP (*(.fini_array))
-        __FINI_END__ = .;
-
-		. = ALIGN(0x1000);
+		. = ALIGN(8);
 	}
 
 	.data : {
 		_data = .;
 		*(.data*)
-		*(.gnu.linkonce.d*)
-		. = ALIGN(0x1000);
+        *(.gnu.linkonce.d*)
+        *(.sdata*)
+        *(.gnu.linkonce.s*)
+		. = ALIGN(8);
 	}
 
 	_edata = .;
@@ -52,10 +57,11 @@ SECTIONS {
 		*(.bss*)
 		*(.gnu.linkonce.b*)
 		*(COMMON)
-		. = ALIGN(0x1000);
+		. = ALIGN(8);
 	}
 
     .stack : {
+        . = ALIGN(0x1000);
         *(.stack*)
         . = ALIGN(0x1000);
     }
