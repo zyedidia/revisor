@@ -1,6 +1,7 @@
 local knit = require("knit")
 
-local arch = cli.arch or "amd64"
+local arch = cli.arch or "arm64"
+local darch = string.upper(arch)
 
 local csrc = knit.join(knit.glob("*.c"), knit.glob(f"arch/$arch/*.c"))
 local ssrc = knit.join(knit.glob("*.S"), knit.glob(f"arch/$arch/*.S"))
@@ -8,7 +9,7 @@ local obj = knit.join(knit.extrepl(csrc, ".c", ".o"), knit.extrepl(ssrc, ".S", "
 obj = knit.prefix(obj, ".")
 
 local picolib := build/install
-local flags := -Wall -nostdlib -O2 -L$picolib/lib -I$picolib/include -lc -lgcc
+local flags := -Wall -nostdlib -O2 -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
 
 return b{
     $ kernel.elf: $obj link/kernel.ld[I]

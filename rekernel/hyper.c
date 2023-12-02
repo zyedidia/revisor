@@ -3,6 +3,7 @@
 
 #include "hyper.h"
 #include "arch/hypercall.h"
+#include "arch/cache.h"
 
 extern uint8_t _end;
 uint8_t* brkp = &_end;
@@ -36,10 +37,12 @@ int lseek64(int file, uint64_t off, int whence) {
 }
 
 int write(int file, char* ptr, int len) {
+    inv_dcache(ptr, len);
     return hypercall3(file, (uintptr_t) ptr, len, HYP_WRITE);
 }
 
 int read(int file, char* ptr, int len) {
+    clean_dcache(ptr, len); // not sure if this is sufficient
     return hypercall3(file, (uintptr_t) ptr, len, HYP_READ);
 }
 
