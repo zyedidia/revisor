@@ -25,7 +25,7 @@ const (
 	CR4xMCE        = (1 << 6)
 	CR4xPGE        = (1 << 7)
 	CR4xPCE        = (1 << 8)
-	CR4xOSFXSR     = (1 << 8)
+	CR4xOSFXSR     = (1 << 9)
 	CR4xOSXMMEXCPT = (1 << 10)
 	CR4xUMIP       = (1 << 11)
 	CR4xVMXE       = (1 << 13)

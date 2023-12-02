@@ -1,4 +1,4 @@
-// hypercall(a0, a1, a2, num, hypcall_dev)
+// hypercall(a0, a1, a2, num)
 .globl hypercall
 hypercall:
 	adr x9, hypcall_dev

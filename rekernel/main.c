@@ -2,6 +2,8 @@
 #include <stdlib.h>
 
 void kmain() {
-    puts("blah");
-    puts("hi");
+    printf("%d\n", 10);
+    printf("%d\n", 10);
+    printf("%d\n", 10);
+    printf("%d\n", 10);
 }

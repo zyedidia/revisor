@@ -85,8 +85,6 @@ func NewMachine(kvmPath string, ncpus int, memSize int, handler HypercallHandler
 		return nil, err
 	}
 
-	fmt.Println(CheckExtension(kvmfd, CapNRMemSlots))
-
 	// TODO: poison memory
 
 	return m, nil
@@ -123,7 +121,6 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 		return fmt.Errorf("kernel is empty")
 	}
 
-	fmt.Printf("entry: %x\n", entry)
 	if err := m.SetupRegs(entry, cmdlineAddr); err != nil {
 		return err
 	}
@@ -217,7 +214,7 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 	switch exit {
 	case ExitHlt:
 		return false, nil
-	case ExitMMIO:
+	case ExitMMIO, ExitIO:
 		err := m.hypercall(cpu)
 		if err != nil {
 			return false, err

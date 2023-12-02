@@ -78,7 +78,7 @@ const (
 	CapPPCGetSMMUInfo           Capability = 78
 	CapS390COW                  Capability = 79
 	CapPPCAllocHTAB             Capability = 80
-	CapReadOnlyMEM              Capability = 81
+	CapReadOnlyMem              Capability = 81
 	CapIRQFDResample            Capability = 82
 	CapPPCBokkeWatchdog         Capability = 83
 	CapPPCHTABFD                Capability = 84

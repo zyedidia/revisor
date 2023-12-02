@@ -40,6 +40,9 @@ func (vcpu *vcpu) initSregs(mem []byte) error {
 
 	sregs.Cs.Db, sregs.Ss.Db = 1, 1
 	sregs.Cr0 |= 1 // protected mode
+	sregs.Cr0 &= 0xfffb
+	sregs.Cr0 |= CR0xMP
+	sregs.Cr4 = CR4xOSFXSR | CR4xOSXMMEXCPT // enable SSE
 
 	if err := vcpu.SetSregs(sregs); err != nil {
 		return err
