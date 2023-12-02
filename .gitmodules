@@ -1,3 +1,6 @@
 [submodule "kernel/newlib"]
 	path = kernel/newlib
 	url = https://github.com/bminor/newlib
+[submodule "rekernel/picolibc"]
+	path = rekernel/picolibc
+	url = https://github.com/picolibc/picolibc

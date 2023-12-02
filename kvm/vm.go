@@ -10,6 +10,7 @@ import (
 type vm struct {
 	fd    uintptr
 	mem   gommap.MMap
+	sys   gommap.MMap
 	vcpus []vcpu
 }
 
@@ -30,10 +31,15 @@ func NewVM(kvmfd uintptr, memSize int64) (*vm, error) {
 	if err != nil {
 		return nil, err
 	}
+	sys, err := gommap.MapAt(0, uintptr(nofd), 0, 4096, gommap.PROT_NONE, gommap.MAP_SHARED|gommap.MAP_ANONYMOUS)
+	if err != nil {
+		return nil, err
+	}
 
 	return &vm{
 		fd:  vmfd,
 		mem: mem,
+		sys: sys,
 	}, nil
 }
 
@@ -44,16 +50,16 @@ func (vm *vm) initMemory() error {
 		MemorySize:    uint64(len(vm.mem)),
 		UserspaceAddr: uint64(uintptr(unsafe.Pointer(&vm.mem[0]))),
 	}); err != nil {
-		return err
+		return fmt.Errorf("KVM_SET_USERSPACE_MEMORY_REGION: %w", err)
 	}
 	if err := vm.SetUserspaceMemoryRegion(&UserspaceMemoryRegion{
 		Slot:          1,
 		GuestPhysAddr: uint64(len(vm.mem)),
-		MemorySize:    4096,
-		UserspaceAddr: 0, // null
+		MemorySize:    uint64(len(vm.sys)),
+		UserspaceAddr: uint64(uintptr(unsafe.Pointer(&vm.sys[0]))),
 		Flags:         kvmMemReadonly,
 	}); err != nil {
-		return err
+		return fmt.Errorf("KVM_SET_USERSPACE_MEMORY_REGION: %w", err)
 	}
 	return nil
 }

@@ -1,6 +1,8 @@
 package kvm
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 // debugControl controls guest debug.
 type debugControl struct {

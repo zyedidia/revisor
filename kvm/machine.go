@@ -123,6 +123,7 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 		return fmt.Errorf("kernel is empty")
 	}
 
+	fmt.Printf("entry: %x\n", entry)
 	if err := m.SetupRegs(entry, cmdlineAddr); err != nil {
 		return err
 	}
@@ -207,7 +208,10 @@ func (m *Machine) RunOnce(cpu int) (bool, error) {
 
 	vcpu := m.vm.vcpus[cpu]
 
-	vcpu.Run()
+	err := vcpu.Run()
+	if err != nil {
+		return false, err
+	}
 	exit := ExitType(m.runs[cpu].ExitReason)
 
 	switch exit {
