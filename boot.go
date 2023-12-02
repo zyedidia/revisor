@@ -18,8 +18,8 @@ func Boot(m *kvm.Machine, kernel io.ReaderAt, params string, trace bool) error {
 
 	for i := 0; i < m.NCPU(); i++ {
 		log.Println("booting vcpu", i)
-		m.StartVCPU(i, trace, &wg)
 		wg.Add(1)
+		m.StartVCPU(i, trace, &wg)
 	}
 
 	wg.Wait()

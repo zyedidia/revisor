@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-	. = 0x80000;
+    . = 0x80000;
 
     .init : {
         KEEP (*(.text.init.enter))
@@ -9,10 +9,10 @@ SECTIONS {
         KEEP (*(SORT_BY_NAME(.init) SORT_BY_NAME(.init.*)))
     }
 
-	.text : {
-		_code = .;
-		*(.text*)
-		*(.gnu.linkonce.t*)
+    .text : {
+        _code = .;
+        *(.text*)
+        *(.gnu.linkonce.t*)
         KEEP(*(.fini*))
 
         . = ALIGN(8);
@@ -30,35 +30,36 @@ SECTIONS {
         KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
         KEEP (*(.fini_array .dtors))
         PROVIDE_HIDDEN ( __fini_array_end = . );
-	}
+    }
 
-	.rodata : {
-		_rodata = .;
-		*(.rodata*)
-		*(.gnu.linkonce.r*)
+    .rodata : {
+        _rodata = .;
+        *(.rodata*)
+        *(.gnu.linkonce.r*)
         *(.srodata*)
 
-		. = ALIGN(8);
-	}
+        . = ALIGN(8);
+    }
 
-	.data : {
-		_data = .;
-		*(.data*)
+    .data : {
+        _data = .;
+        *(.data*)
         *(.gnu.linkonce.d*)
         *(.sdata*)
         *(.gnu.linkonce.s*)
-		. = ALIGN(8);
-	}
+        . = ALIGN(8);
+    }
 
-	_edata = .;
+    _edata = .;
 
-	.bss : {
-		_bss = .;
-		*(.bss*)
-		*(.gnu.linkonce.b*)
-		*(COMMON)
-		. = ALIGN(8);
-	}
+    .bss : {
+        _bss = .;
+        *(.bss*)
+        *(.gnu.linkonce.b*)
+        *(.sbss*)
+        *(COMMON)
+        . = ALIGN(8);
+    }
 
     .stack : {
         . = ALIGN(0x1000);
@@ -66,10 +67,10 @@ SECTIONS {
         . = ALIGN(0x1000);
     }
 
-	_end = .;
+    _end = .;
 
-	/DISCARD/ : {
-		*(.comment)
-		*(note.*)
-	}
+    /DISCARD/ : {
+        *(.comment)
+        *(note.*)
+    }
 }
