@@ -16,7 +16,7 @@ spin:
 
 .section ".stack"
 
-.align 16
+.p2align 4
 .globl init_stack_end
 init_stack_start:
 	.fill 0x8000,1,0

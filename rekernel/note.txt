@@ -1,0 +1,3 @@
+arm64: making hypercalls with memory arguments and the caches disabled is
+problematic -- always enable the caches before any hypercalls (to make it work
+without caches, you can use the cache invalidation routines)
