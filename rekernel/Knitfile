@@ -16,11 +16,14 @@ if arch == "amd64" then
 end
 
 return b{
-    $ kernel.elf: $obj link/kernel.ld[I]
+    $ kernel.elf: $obj link/kernel.out.ld[I]
         gcc $input -o $output -Tlink/kernel.ld -static $flags
 
     $ .%.o:D[.%.d]: %.c
         gcc -O2 -MMD -c $input -o $output $flags
     $ .%.o: %.S
         gcc -c $input -o $output $flags
+
+    $ link/kernel.out.ld: link/kernel.ld
+        cpp -P -D$darch $input > $output
 }

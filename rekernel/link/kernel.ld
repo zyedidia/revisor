@@ -1,11 +1,17 @@
 ENTRY(_start)
 
+#if defined AMD64
 KTEXT_VMA  = 0xffffffff80000000;
 KERNEL_VMA = 0xffff800000000000;
-HIGH_START = KTEXT_VMA + 0x40000000 + 0x100000; /* 0xffff_ffff_8000_0000 + 0x4000_0000 + 0x10_0000 */
+#elif defined ARM64
+KTEXT_VMA  = 0xffffffc000000000;
+KERNEL_VMA = KTEXT_VMA;
+#endif
+LOW_START  = 0x40000000;
+HIGH_START = KTEXT_VMA + LOW_START + 0x100000;
 
 SECTIONS {
-    . = 0x40000000;
+    . = LOW_START;
 
     .lowtext : {
         KEEP(*(.lowtext*))

@@ -12,5 +12,12 @@ const (
 	kvmArmVcpuFinalize    = 0xC2
 	kvmArmVcpuPsci0_2     = 2
 
-	virtBase = 0xffff_ffc0_0000_0000
+	kernBase = 0xffff_ffc0_0000_0000
 )
+
+func ka2pa(ka uint64) uint64 {
+	if ka >= kernBase {
+		return ka - kernBase
+	}
+	return ka
+}

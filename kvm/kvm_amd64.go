@@ -60,3 +60,12 @@ func (vm *vm) SetIdentityMapAddr(addr uint32) error {
 
 	return err
 }
+
+func ka2pa(ka uint64) uint64 {
+	if ka >= kernTextBase {
+		return ka - kernTextBase
+	} else if ka >= kernBase {
+		return ka - kernBase
+	}
+	return ka
+}

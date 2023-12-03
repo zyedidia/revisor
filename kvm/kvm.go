@@ -140,12 +140,3 @@ func createVM(kvmfd uintptr) (uintptr, error) {
 func getVCPUMMmapSize(kvmfd uintptr) (uintptr, error) {
 	return Ioctl(kvmfd, IIO(kvmGetVCPUMMapSize), uintptr(0))
 }
-
-func ka2pa(ka uint64) uint64 {
-	if ka >= kernTextBase {
-		return ka - kernTextBase
-	} else if ka >= kernBase {
-		return ka - kernBase
-	}
-	return ka
-}
