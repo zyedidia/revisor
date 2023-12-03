@@ -17,9 +17,6 @@ import (
 const (
 	bootParamAddr = 0x10000
 	cmdlineAddr   = 0x20000
-
-	// kernelVMA   = 0xffffffff80000000
-	kernelVMA = 0
 )
 
 type HypercallHandler interface {
@@ -91,15 +88,12 @@ func NewMachine(kvmPath string, ncpus int, memSize int, handler HypercallHandler
 }
 
 func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
-	copy(m.vm.mem[cmdlineAddr:], params)
-	m.vm.mem[cmdlineAddr+len(params)] = 0 // null terminated
-
 	e, err := elf.NewFile(kernel)
 	if err != nil {
 		return err
 	}
 
-	entry := e.Entry - kernelVMA
+	entry := e.Entry
 	kernSize := 0
 
 	for i, p := range e.Progs {
@@ -107,12 +101,13 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 			continue
 		}
 
-		n, err := p.ReadAt(m.vm.mem[p.Vaddr-kernelVMA:], 0)
+		n, err := p.ReadAt(m.vm.mem[ka2pa(p.Vaddr)-physRamBase:], 0)
 		if !errors.Is(err, io.EOF) || uint64(n) != p.Filesz {
-			return fmt.Errorf("reading ELF prog %d@%#x: %d/%d bytes, err %w", i, p.Vaddr-kernelVMA, n, p.Filesz, err)
+			return fmt.Errorf("reading ELF prog %d@%#x: %d/%d bytes, err %w", i, p.Vaddr, n, p.Filesz, err)
 		}
+		// TODO: make this more efficient
 		for i := p.Filesz; i < p.Memsz; i++ {
-			m.vm.mem[p.Vaddr-kernelVMA+i] = 0
+			m.vm.mem[ka2pa(p.Vaddr)+i-physRamBase] = 0
 		}
 		kernSize += n
 	}
@@ -120,6 +115,7 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 	if kernSize == 0 {
 		return fmt.Errorf("kernel is empty")
 	}
+	fmt.Printf("entry %x\n", entry)
 
 	if err := m.SetupRegs(entry, cmdlineAddr); err != nil {
 		return err
@@ -248,7 +244,7 @@ func (m *Machine) SingleStep(onoff bool) error {
 func (m *Machine) ReadAt(b []byte, off int64) (int, error) {
 	mem := bytes.NewReader(m.vm.mem)
 
-	return mem.ReadAt(b, off)
+	return mem.ReadAt(b, off-physRamBase)
 }
 
 // ReadBytes reads bytes from the CPUs virtual address space.
@@ -258,11 +254,11 @@ func (m *Machine) ReadBytes(cpu int, b []byte, vaddr uint64) (int, error) {
 }
 
 func (m *Machine) SliceEnd(start uint64) []byte {
-	return m.vm.mem[start:]
+	return m.vm.mem[start-physRamBase:]
 }
 
 func (m *Machine) Slice(start, end uint64) []byte {
-	return m.vm.mem[start:end]
+	return m.vm.mem[start-physRamBase : end-physRamBase]
 }
 
 func (m *Machine) NCPU() int {

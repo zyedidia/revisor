@@ -3,6 +3,5 @@
 #include <stdint.h>
 
 void kmain() {
-    printf("blah\n");
-    printf("hi\n");
+    printf("arrived in kmain at %p\n", &kmain);
 }

@@ -1,13 +1,20 @@
 ENTRY(_start)
 
-SECTIONS {
-    . = 0x80000;
+HIGH_START = 0xffffffc040100000;
 
-    .init : {
-        KEEP (*(.text.init.enter))
-        KEEP (*(.data.init.enter))
-        KEEP (*(SORT_BY_NAME(.init) SORT_BY_NAME(.init.*)))
+SECTIONS {
+    . = 0x40000000;
+
+    .lowtext : {
+        KEEP(*(.lowtext*))
+        . = ALIGN(8);
     }
+    .lowdata : {
+        *(.lowdata*)
+        . = ALIGN(8);
+    }
+
+    . = HIGH_START;
 
     .text : {
         _code = .;

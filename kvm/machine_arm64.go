@@ -59,5 +59,5 @@ func (m *Machine) hypercall(cpu int) error {
 
 func (m *Machine) VtoP(cpu int, v uint64) uint64 {
 	// TODO: arm64 virtual to physical translation
-	return v
+	return ka2pa(v)
 }

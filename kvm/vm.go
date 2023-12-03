@@ -7,6 +7,11 @@ import (
 	"github.com/tysonmote/gommap"
 )
 
+const (
+	physSysBase = 0x0000_4000
+	physRamBase = 0x4000_0000
+)
+
 type vm struct {
 	fd    uintptr
 	mem   gommap.MMap
@@ -46,7 +51,7 @@ func NewVM(kvmfd uintptr, memSize int64) (*vm, error) {
 func (vm *vm) initMemory() error {
 	if err := vm.SetUserspaceMemoryRegion(&UserspaceMemoryRegion{
 		Slot:          0,
-		GuestPhysAddr: 0,
+		GuestPhysAddr: physRamBase,
 		MemorySize:    uint64(len(vm.mem)),
 		UserspaceAddr: uint64(uintptr(unsafe.Pointer(&vm.mem[0]))),
 	}); err != nil {
@@ -54,7 +59,7 @@ func (vm *vm) initMemory() error {
 	}
 	if err := vm.SetUserspaceMemoryRegion(&UserspaceMemoryRegion{
 		Slot:          1,
-		GuestPhysAddr: uint64(len(vm.mem)),
+		GuestPhysAddr: physSysBase,
 		MemorySize:    uint64(len(vm.sys)),
 		UserspaceAddr: uint64(uintptr(unsafe.Pointer(&vm.sys[0]))),
 		Flags:         kvmMemReadonly,
