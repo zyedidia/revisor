@@ -21,7 +21,7 @@ _start:
 	ldr x0, =_start64
 	br x0
 
-.section ".lowdata", "ad"
+.section ".lowdata", "a"
 
 .p2align 12
 .globl pagetable

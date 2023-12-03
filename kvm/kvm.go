@@ -142,8 +142,10 @@ func getVCPUMMmapSize(kvmfd uintptr) (uintptr, error) {
 }
 
 func ka2pa(ka uint64) uint64 {
-	if ka >= virtBase {
-		return ka - virtBase
+	if ka >= kernTextBase {
+		return ka - kernTextBase
+	} else if ka >= kernBase {
+		return ka - kernBase
 	}
 	return ka
 }

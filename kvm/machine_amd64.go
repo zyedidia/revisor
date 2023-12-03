@@ -1,6 +1,8 @@
 package kvm
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 const (
 	kvmTSSStart = kvmIdentityMapStart + kvmIdentityMapSize

@@ -49,6 +49,9 @@ const (
 	PDE64xDIRTY    = (1 << 6)
 	PDE64xPS       = (1 << 7)
 	PDE64xG        = (1 << 8)
+
+	kernBase     = 0xffff_8000_0000_0000
+	kernTextBase = 0xffff_ffff_8000_0000
 )
 
 // SetIdentityMapAddr sets the address of a 4k-sized-page for a vm.

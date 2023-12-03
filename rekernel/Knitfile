@@ -1,6 +1,6 @@
 local knit = require("knit")
 
-local arch = cli.arch or "arm64"
+local arch = cli.arch or "amd64"
 local darch = string.upper(arch)
 
 local csrc = knit.join(knit.glob("*.c"), knit.glob(f"arch/$arch/*.c"))
@@ -10,6 +10,10 @@ obj = knit.prefix(obj, ".")
 
 local picolib := build/install
 local flags := -Wall -nostdlib -O2 -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
+
+if arch == "amd64" then
+    flags := $flags -mcmodel=kernel -fno-pic
+end
 
 return b{
     $ kernel.elf: $obj link/kernel.ld[I]

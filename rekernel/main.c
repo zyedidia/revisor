@@ -4,4 +4,7 @@
 
 void kmain() {
     printf("arrived in kmain at %p\n", &kmain);
+
+    int* p = malloc(10);
+    printf("malloc: %p\n", p);
 }

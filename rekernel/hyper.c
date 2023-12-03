@@ -5,12 +5,12 @@
 #include "arch/hypercall.h"
 #include "arch/cache.h"
 
-extern uint8_t _end;
-uint8_t* brkp = &_end;
+extern uint8_t _heap_start;
+uint8_t* brkp = &_heap_start;
 
 void* sbrk(size_t incr) {
     if (incr < 0) {
-        if ((size_t) (brkp - &_end) < (size_t) (-incr)) {
+        if ((size_t) (brkp - &_heap_start) < (size_t) (-incr)) {
             errno = ENOMEM;
             return (void *) -1;
         }

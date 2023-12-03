@@ -1,6 +1,8 @@
 ENTRY(_start)
 
-HIGH_START = 0xffffffc040100000;
+KTEXT_VMA  = 0xffffffff80000000;
+KERNEL_VMA = 0xffff800000000000;
+HIGH_START = KTEXT_VMA + 0x40000000 + 0x100000; /* 0xffff_ffff_8000_0000 + 0x4000_0000 + 0x10_0000 */
 
 SECTIONS {
     . = 0x40000000;
@@ -75,6 +77,8 @@ SECTIONS {
     }
 
     _end = .;
+
+    _heap_start = (. - KTEXT_VMA + KERNEL_VMA);
 
     /DISCARD/ : {
         *(.comment)
