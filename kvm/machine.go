@@ -105,9 +105,9 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 		if !errors.Is(err, io.EOF) || uint64(n) != p.Filesz {
 			return fmt.Errorf("reading ELF prog %d@%#x: %d/%d bytes, err %w", i, p.Vaddr, n, p.Filesz, err)
 		}
-		// TODO: make this more efficient
-		for i := p.Filesz; i < p.Memsz; i++ {
-			m.vm.mem[ka2pa(p.Vaddr)+i-physRamBase] = 0
+		start := ka2pa(p.Vaddr) - physRamBase
+		for i := start + p.Filesz; i < start+p.Memsz; i++ {
+			m.vm.mem[i] = 0
 		}
 		kernSize += n
 	}
@@ -115,7 +115,6 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 	if kernSize == 0 {
 		return fmt.Errorf("kernel is empty")
 	}
-	fmt.Printf("entry %x\n", entry)
 
 	if err := m.SetupRegs(entry, cmdlineAddr); err != nil {
 		return err
