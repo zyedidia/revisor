@@ -2,7 +2,7 @@ module arch.arm64.init;
 
 import arch.arm64.sys;
 
-extern void ktrap_entry();
+extern (C) extern void ktrap_entry();
 
 void arch_init() {
     // Clear OS lock.
