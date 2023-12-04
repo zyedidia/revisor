@@ -9,7 +9,7 @@ local obj = knit.join(knit.extrepl(csrc, ".c", ".o"), knit.extrepl(ssrc, ".S", "
 obj = knit.prefix(obj, ".")
 
 local picolib := build/install
-local flags := -Wall -nostdlib -O2 -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
+local flags := -Wall -nostdlib -O2 -I. -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
 
 if arch == "amd64" then
     flags := $flags -mcmodel=kernel -fno-pic
