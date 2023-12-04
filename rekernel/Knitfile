@@ -17,7 +17,7 @@ end
 
 return b{
     $ kernel.elf: $obj link/kernel.out.ld[I]
-        gcc $input -o $output -Tlink/kernel.ld -static $flags
+        gcc $input -o $output -Tlink/kernel.out.ld -static $flags
 
     $ .%.o:D[.%.d]: %.c
         gcc -O2 -MMD -c $input -o $output $flags
