@@ -1,6 +1,6 @@
-// hypercall(a0, a1, a2, num)
-.globl hypercall
-hypercall:
+// _hypercall(a0, a1, a2, num)
+.globl _hypercall
+_hypercall:
 	lea hypcall_dev, %r8
 	mov (%r8), %r8
 	mov %rcx, %rax

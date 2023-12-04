@@ -1,28 +1,36 @@
 local knit = require("knit")
 
-local arch = cli.arch or "arm64"
+local arch = cli.arch or "amd64"
 local darch = string.upper(arch)
 
-local csrc = knit.join(knit.glob("*.c"), knit.glob(f"arch/$arch/*.c"))
+local dsrc = knit.join(knit.glob("*.d"), knit.glob(f"arch/$arch/*.d"))
 local ssrc = knit.join(knit.glob("*.S"), knit.glob(f"arch/$arch/*.S"))
-local obj = knit.join(knit.extrepl(csrc, ".c", ".o"), knit.extrepl(ssrc, ".S", ".o"))
+local obj = knit.join(knit.extrepl(dsrc, ".d", ".o"), knit.extrepl(ssrc, ".S", ".o"))
 obj = knit.prefix(obj, ".")
 
 local picolib := build/install
 local flags := -Wall -nostdlib -O2 -I. -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
 
+local flags = {
+    dc := -O2 -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -I$picolib/include
+    ld := -nostdlib -L$picolib/lib -lc -lgcc
+}
+
 if arch == "amd64" then
-    flags := $flags -mcmodel=kernel -fno-pic
+    flags.dc = flags.dc .. " -mcmodel=kernel -fno-pic"
+    flags.ld = flags.ld .. " -mcmodel=kernel -fno-pic"
 end
+
+local dc = "gdc"
 
 return b{
     $ kernel.elf: $obj link/kernel.out.ld[I]
-        gcc $input -o $output -Tlink/kernel.out.ld -static $flags
+        gcc $input -o $output -Tlink/kernel.out.ld -static $(flags.ld)
 
-    $ .%.o:D[.%.d]: %.c
-        gcc -O2 -MMD -c $input -o $output $flags
+    $ .%.o:D[.%.dep]: %.d
+        $(dc) -O2 -MM -MF $dep -c $input -o $output $(flags.dc)
     $ .%.o: %.S
-        gcc -c $input -o $output $flags
+        gcc -c $input -o $output -D$darch
 
     $ link/kernel.out.ld: link/kernel.ld
         cpp -P -D$darch $input > $output

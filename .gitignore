@@ -1,7 +1,7 @@
 .knit
 /revisor
 *.elf
-*.d
+*.dep
 *.o
 build-newlib
 build
