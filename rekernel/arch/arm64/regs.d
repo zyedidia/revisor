@@ -30,7 +30,25 @@ struct Regs {
     ulong x26;
     ulong x27;
     ulong x28;
-    ulong fp;
-    ulong lr;
+    ulong x29;
+    ulong x30;
     ulong sp; // loaded from sp_el0
 };
+
+struct Context {
+    ulong x30;
+    ulong sp;
+
+    // callee-saved
+    ulong x19;
+    ulong x20;
+    ulong x21;
+    ulong x22;
+    ulong x23;
+    ulong x24;
+    ulong x25;
+    ulong x26;
+    ulong x27;
+    ulong x28;
+    ulong x29;
+}

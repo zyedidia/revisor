@@ -1,10 +1,20 @@
 local knit = require("knit")
 
-local arch = cli.arch or "amd64"
+local arch = cli.arch or "arm64"
 local darch = string.upper(arch)
 
-local dsrc = knit.join(knit.glob("*.d"), knit.glob(f"arch/$arch/*.d"))
-local ssrc = knit.join(knit.glob("*.S"), knit.glob(f"arch/$arch/*.S"))
+local dsrc = knit.join(
+    knit.glob("*.d"),
+    knit.glob(f"arch/$arch/*.d"),
+    knit.glob("core/*.d"),
+    knit.glob("alloc/*.d")
+)
+
+local ssrc = knit.join(
+    knit.glob("*.S"),
+    knit.glob(f"arch/$arch/*.S")
+)
+
 local obj = knit.join(knit.extrepl(dsrc, ".d", ".o"), knit.extrepl(ssrc, ".S", ".o"))
 obj = knit.prefix(obj, ".")
 

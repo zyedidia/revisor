@@ -57,9 +57,13 @@ int read(int file, char* ptr, int len) {
     return cast(int) hypercall(Hyper.READ, file, cast(uintptr) ptr, len);
 }
 
-noreturn exit(int status) {
+noreturn _exit(int status) {
     hypercall(Hyper.EXIT, status);
     while (1) {}
+}
+
+noreturn exit(int status) {
+    _exit(status);
 }
 
 int isatty(int file) {
