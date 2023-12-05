@@ -1,6 +1,8 @@
 local knit = require("knit")
 
-local arch = cli.arch or "arm64"
+local _, uconf = pcall(include, "conf.knit")
+
+local arch = cli.arch or uconf.arch or "arm64"
 local darch = string.upper(arch)
 
 local dsrc = knit.join(
