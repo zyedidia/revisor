@@ -6,6 +6,7 @@ import core.alloc;
 import arch.arm64.sys;
 
 import vm;
+import sys;
 
 struct Pte {
     ulong data;
@@ -164,6 +165,21 @@ struct Pagetable {
         pte.af = 1;
         pte.index = 0;
         return true;
+    }
+
+    static usize lvl2size(uint level) {
+        switch (level) {
+        case LEVEL_4K:
+            return kb(4);
+        case LEVEL_2M:
+            return mb(2);
+        case LEVEL_1G:
+            return gb(1);
+        case LEVEL_512G:
+            return gb(512);
+        default:
+            assert(0, "unreachable");
+        }
     }
 }
 

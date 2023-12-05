@@ -9,6 +9,8 @@ import core.lib;
 import bits = core.bits;
 
 import proc;
+import trap;
+import syscall;
 
 extern (C) {
     void kernel_exception(Regs* regs) {
@@ -24,15 +26,23 @@ extern (C) {
         exit(1);
     }
 
-    void user_exception(Proc* proc) {
-        printf("user exception\n");
+    void user_exception(Proc* p) {
+        ulong exc_class = bits.get(SysReg.esr_el1, 31, 26);
 
-        printf("x0: %ld\n", proc.trapframe.regs.x0);
+        switch (exc_class) {
+        case Exception.SVC:
+            Regs* r = &p.trapframe.regs;
+            r.x0 = syscall_handler(p, r.x8, r.x0, r.x1, r.x2, r.x3, r.x4, r.x5);
+            break;
+        default:
+            printf("[unhandled user exception]: esr: 0x%lx, elr: 0x%lx\n", exc_class, SysReg.elr_el1);
+            unhandled(p);
+        }
 
-        exit(1);
+        usertrapret(p);
     }
 
-    void user_interrupt(Proc* proc) {
+    void user_interrupt(Proc* p) {
         printf("user interrupt\n");
         exit(1);
     }

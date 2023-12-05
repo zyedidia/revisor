@@ -13,11 +13,12 @@ void free(void* ptr);
 usize strlen(const(char)* s);
 
 int open(const char* name, int flags, int mode);
-long read(int fd, void* buf, usize count);
-long lseek(int fd, long offset, int whence);
+ssize read(int fd, void* buf, usize count);
+ssize write(int fd, void* buf, usize count);
+ssize lseek(int fd, ssize offset, int whence);
 int close(int fd);
 
-void exit(int status);
+noreturn exit(int status);
 
 enum {
     SEEK_SET = 0,

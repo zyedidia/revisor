@@ -8,8 +8,10 @@ alias noreturn = typeof(*null);
 
 static if ((void*).sizeof == 8) {
     alias uintptr = ulong;
+    alias ssize = long;
 } else static if ((void*).sizeof == 4) {
     alias uintptr = uint;
+    alias ssize = int;
 } else {
     static assert(0, "pointer size must be 4 or 8 bytes");
 }

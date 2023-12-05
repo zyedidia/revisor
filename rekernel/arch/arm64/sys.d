@@ -61,6 +61,17 @@ enum {
     SPSR_EL0 = 0,
 }
 
+enum Exception {
+    SMC   = 0b010111,
+    SVC   = 0b010101,
+    HVC   = 0b010110,
+    BRKPT = 0b110000,
+    WCHPT = 0b110100,
+    SS    = 0b110010,
+
+    DATA_ABORT_LOWER = 0b100100,
+}
+
 pragma(inline, true)
 uintptr ka2pa(uintptr ka) {
     return ka - KERNEL_START;
