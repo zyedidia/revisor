@@ -1,6 +1,6 @@
 module core.vector;
 
-import alloc;
+import core.alloc;
 import core.lib : memcpy;
 
 struct Vector(T) {

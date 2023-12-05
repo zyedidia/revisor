@@ -1,4 +1,4 @@
-module alloc;
+module core.alloc;
 
 import core.emplace;
 import core.lib : malloc, memset, free;
