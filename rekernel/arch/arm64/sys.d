@@ -54,3 +54,29 @@ struct SysReg {
 
     mixin(GenSysReg!("daif"));
 }
+
+enum {
+    KERNEL_START = 0xffff_0000_0000_0000,
+
+    SPSR_EL0 = 0,
+}
+
+pragma(inline, true)
+uintptr ka2pa(uintptr ka) {
+    return ka - KERNEL_START;
+}
+
+pragma(inline, true)
+uintptr pa2ka(uintptr pa) {
+    return pa + KERNEL_START;
+}
+
+pragma(inline, true)
+void vm_fence() {
+    asm {
+        "dsb ish" ::: "memory";
+        "tlbi vmalle1" ::: "memory";
+        "dsb ish" ::: "memory";
+        "isb" ::: "memory";
+    }
+}
