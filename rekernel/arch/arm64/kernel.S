@@ -67,16 +67,16 @@ cur_el_spx_serror:
 	b exception_entry
 .balign 0x80
 lower_el_aarch64_sync:
-	b user_exception
+	b uservec_exception
 .balign 0x80
 lower_el_aarch64_irq:
-	b user_interrupt
+	b uservec_interrupt
 .balign 0x80
 lower_el_aarch64_fiq:
-	b user_interrupt
+	b uservec_interrupt
 .balign 0x80
 lower_el_aarch64_serror:
-	b user_exception
+	b uservec_exception
 // aarch32 stuff, just infinite loop
 .balign 0x80
 	b .
@@ -98,3 +98,26 @@ interrupt_entry:
 	mov x0, sp
 	bl kernel_interrupt
 	EPILOGUE
+
+// kswitch(void* p, context* old, context* new)
+.globl kswitch
+kswitch:
+    mov x9, sp
+    stp lr, x9,   [x1, #0+16*0]
+    stp x19, x20, [x1, #0+16*1]
+    stp x21, x22, [x1, #0+16*2]
+    stp x23, x24, [x1, #0+16*3]
+    stp x25, x26, [x1, #0+16*4]
+    stp x27, x28, [x1, #0+16*5]
+    str x29,      [x1, #0+16*6]
+
+    ldp lr, x9,   [x2, #0+16*0]
+    ldp x19, x20, [x2, #0+16*1]
+    ldp x21, x22, [x2, #0+16*2]
+    ldp x23, x24, [x2, #0+16*3]
+    ldp x25, x26, [x2, #0+16*4]
+    ldp x27, x28, [x2, #0+16*5]
+    ldr x29,      [x2, #0+16*6]
+    mov sp, x9
+
+    ret

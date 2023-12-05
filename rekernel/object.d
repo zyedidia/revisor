@@ -16,3 +16,5 @@ static if ((void*).sizeof == 8) {
 
 pragma(printf)
 extern (C) void printf(const char* fmt, ...);
+
+enum PAGESIZE = 4096;

@@ -37,9 +37,7 @@ _start:
 .p2align 12
 l0pt:
 	.quad l1pt + 3
-	.fill 255,8,0
-	.quad l1pt + 3
-	.fill 255,8,0
+	.fill 511,8,0
 
 .p2align 12
 l1pt:
@@ -50,6 +48,10 @@ l1pt:
 .text
 
 _start64:
+	// disable the lower half pagetable
+	msr ttbr0_el1, xzr
+	isb
+
 	adr x8, init_stack_end
 	mov sp, x8
 

@@ -41,12 +41,12 @@ int close(int file) {
     return cast(int) hypercall(Hyper.CLOSE, file);
 }
 
-int lseek(int file, ulong off, int whence) {
-    return cast(int) hypercall(Hyper.LSEEK, file, off, whence);
+long lseek(int file, long off, int whence) {
+    return cast(long) hypercall(Hyper.LSEEK, file, off, whence);
 }
 
-int lseek64(int file, ulong off, int whence) {
-    return cast(int) hypercall(Hyper.LSEEK, file, off, whence);
+long lseek64(int file, long off, int whence) {
+    return cast(long) hypercall(Hyper.LSEEK, file, off, whence);
 }
 
 int write(int file, char* ptr, int len) {

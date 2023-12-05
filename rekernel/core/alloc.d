@@ -1,10 +1,20 @@
 module core.alloc;
 
 import core.emplace;
-import core.lib : malloc, memset, free;
+import core.lib : malloc, memset, free, aligned_alloc;
+
+void* kallocpage() {
+    return aligned_alloc(PAGESIZE, PAGESIZE);
+}
 
 ubyte[] kalloc(usize sz) {
-    ubyte* p = cast(ubyte*) malloc(sz);
+    ubyte* p = void;
+    if (sz >= PAGESIZE) {
+        // always align to pagesize if the size is large enough
+        p = cast(ubyte*) aligned_alloc(PAGESIZE, sz);
+    } else {
+        p = cast(ubyte*) malloc(sz);
+    }
     if (!p)
         return null;
     return p[0 .. sz];
@@ -19,7 +29,7 @@ ubyte[] kzalloc(usize sz) {
 }
 
 T* knew(T)() {
-    T* p = cast(T*) malloc(T.sizeof);
+    T* p = cast(T*) aligned_alloc(T.alignof, T.sizeof);
     if (!p) {
         return null;
     }
@@ -31,7 +41,7 @@ T* knew(T)() {
 }
 
 T[] kallocarray(T)(usize nelem) {
-    T* p = cast(T*) malloc(T.sizeof * nelem);
+    T* p = cast(T*) aligned_alloc(T.alignof, T.sizeof * nelem);
     if (!p) {
         return null;
     }
@@ -39,6 +49,8 @@ T[] kallocarray(T)(usize nelem) {
 }
 
 void kfree(T)(T* ptr) if (is(T == struct)) {
+    if (!ptr)
+        return;
     static if (HasDtor!(T)) {
         ptr.__xdtor();
     }
@@ -46,6 +58,8 @@ void kfree(T)(T* ptr) if (is(T == struct)) {
 }
 
 void kfree(T)(T[] arr) {
+    if (!arr)
+        return;
     static if (HasDtor!(T)) {
         foreach (ref val; arr) {
             val.__xdtor();

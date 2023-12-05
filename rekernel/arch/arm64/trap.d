@@ -4,25 +4,37 @@ import arch.arm64.sys;
 import arch.arm64.regs;
 import arch.arm64.vm;
 
+import core.lib;
+
+import bits = core.bits;
+
 import proc;
 
 extern (C) {
     void kernel_exception(Regs* regs) {
         cast(void) regs;
-        printf("kernel exception: esr: %lx, elr: %lx\n", SysReg.esr_el1, SysReg.elr_el1);
+        ulong exc_class = bits.get(SysReg.esr_el1, 31, 26);
+        printf("kernel exception: esr: 0x%lx, elr: 0x%lx\n", exc_class, SysReg.elr_el1);
+        exit(1);
     }
 
     void kernel_interrupt(Regs* regs) {
         cast(void) regs;
         printf("kernel interrupt\n");
+        exit(1);
     }
 
-    void user_exception() {
+    void user_exception(Proc* proc) {
         printf("user exception\n");
+
+        printf("x0: %ld\n", proc.trapframe.regs.x0);
+
+        exit(1);
     }
 
-    void user_interrupt() {
+    void user_interrupt(Proc* proc) {
         printf("user interrupt\n");
+        exit(1);
     }
 }
 

@@ -67,6 +67,11 @@ uintptr ka2pa(uintptr ka) {
 }
 
 pragma(inline, true)
+uintptr ka2pa(void* ka) {
+    return ka2pa(cast(uintptr) ka);
+}
+
+pragma(inline, true)
 uintptr pa2ka(uintptr pa) {
     return pa + KERNEL_START;
 }

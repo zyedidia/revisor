@@ -51,4 +51,9 @@ struct Context {
     ulong x27;
     ulong x28;
     ulong x29;
+
+    this(uintptr lr, uintptr sp) {
+        this.x30 = lr;
+        this.sp = sp;
+    }
 }

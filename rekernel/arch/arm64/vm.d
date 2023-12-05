@@ -3,8 +3,9 @@ module arch.arm64.vm;
 import bits = core.bits;
 import core.alloc;
 
-import vm;
 import arch.arm64.sys;
+
+import vm;
 
 struct Pte {
     ulong data;
@@ -135,6 +136,15 @@ struct Pagetable {
             }
             pte.data = 0;
         }
+    }
+
+    bool map_region(uintptr va, uintptr pa, usize size, uint perm) {
+        assert(size % PAGESIZE == 0);
+        for (usize i = 0; i < size; i += PAGESIZE) {
+            if (!map(va + i, pa + i, LEVEL_4K, perm))
+                return false;
+        }
+        return true;
     }
 
     bool map(uintptr va, uintptr pa, uint level, uint perm) {

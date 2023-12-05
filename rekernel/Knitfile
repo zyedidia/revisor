@@ -24,8 +24,8 @@ local picolib := build/install
 local flags := -Wall -nostdlib -O2 -I. -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
 
 local flags = {
-    dc := -O2 -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -I$picolib/include -fversion=$arch
-    ld := -nostdlib -L$picolib/lib -lc -lgcc
+    dc := -O2 -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -I$picolib/include -fversion=$arch -ftransition=tls
+    ld := -nostdlib -L$picolib/lib -lc -lgcc -Wl,--gc-sections
 }
 
 if arch == "amd64" then
