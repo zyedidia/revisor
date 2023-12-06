@@ -18,12 +18,14 @@ enum Sys {
     EXIT = 93,
     EXIT_GROUP = 94,
     SET_TID_ADDRESS = 96,
+    SET_ROBUST_LIST = 99,
     GETPID = 172,
     GETUID = 174,
     GETEUID = 175,
     GETGID = 176,
     GETEGID = 177,
     BRK = 214,
+    RSEQ = 293,
 }
 
 enum Err {
@@ -31,6 +33,7 @@ enum Err {
     BADF = -9,
     NOMEM = -12,
     FAULT = -14,
+    NOSYS = -38,
 }
 
 uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulong a3, ulong a4, ulong a5) {
@@ -51,12 +54,13 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         break;
     case Sys.EXIT, Sys.EXIT_GROUP:
         sys_exit(p, cast(int) a0);
-    case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID, Sys.SET_TID_ADDRESS, Sys.IOCTL:
+    case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID, Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL:
+        // ignored
         ret = 0;
         break;
     default:
-        printf("unknown syscall: %ld\n", sysno);
-        unhandled(p);
+        printf("[warning]: unknown syscall: %ld\n", sysno);
+        ret = Err.NOSYS;
     }
 
     return ret;
@@ -120,11 +124,12 @@ uintptr sys_brk(Proc* p, uintptr addr) {
     uint level;
     Pte* pte = p.pt.walk(addr, level);
     if (!pte) {
+        return Err.NOMEM;
+    } else if (!pte.valid) {
         void* page = kallocpage();
         if (!page)
             return Err.NOMEM;
-        printf("map %lx -> %lx\n", truncpg(addr), ka2pa(page));
-        if (!p.pt.map(truncpg(addr), ka2pa(page), PAGESIZE, Perm.READ | Perm.WRITE | Perm.USER)) {
+        if (!p.pt.map_region(truncpg(addr), ka2pa(page), PAGESIZE, Perm.READ | Perm.WRITE | Perm.USER)) {
             kfree(page);
             return Err.NOMEM;
         }

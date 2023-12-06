@@ -98,7 +98,7 @@ struct Pagetable {
 
         for (uint level = LEVEL_MAX; level > endlevel; level--) {
             Pte* pte = &pt.ptes[vpn(level, va)];
-            if (pte.valid && !pte.table) {
+            if (pte.valid && pte.leaf(level)) {
                 endlevel = level;
                 return pte;
             } else if (pte.valid) {
