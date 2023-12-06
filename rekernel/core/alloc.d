@@ -48,6 +48,12 @@ T[] kallocarray(T)(usize nelem) {
     return p[0 .. nelem];
 }
 
+void kfree(void* ptr) {
+    if (!ptr)
+        return;
+    free(ptr);
+}
+
 void kfree(T)(T* ptr) if (is(T == struct)) {
     if (!ptr)
         return;

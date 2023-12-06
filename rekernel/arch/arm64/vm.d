@@ -139,7 +139,7 @@ struct Pagetable {
         }
     }
 
-    bool map_region(uintptr va, uintptr pa, usize size, uint perm) {
+    bool map_region(uintptr va, uintptr pa, usize size, Perm perm) {
         assert(size % PAGESIZE == 0);
         for (usize i = 0; i < size; i += PAGESIZE) {
             if (!map(va + i, pa + i, LEVEL_4K, perm))
@@ -148,17 +148,18 @@ struct Pagetable {
         return true;
     }
 
-    bool map(uintptr va, uintptr pa, uint level, uint perm) {
+    bool map(uintptr va, uintptr pa, uint level, Perm perm) {
         return map(va, pa, level, perm, &knew!(Pagetable));
     }
 
-    bool map(uintptr va, uintptr pa, uint level, uint perm, Pagetable* function() ptalloc) {
+    bool map(uintptr va, uintptr pa, uint level, Perm perm, Pagetable* function() ptalloc) {
         Pte* pte = walk(va, level, ptalloc);
         if (!pte) {
             return false;
         }
         pte.pa = pa;
         pte.valid = 1;
+        pte.perm = perm;
         // last level PTEs leaf need the 'table' bit enabled (confusingly)
         pte.table = level == 0;
         pte.sh = 0b11;

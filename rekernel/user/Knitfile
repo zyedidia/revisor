@@ -1,4 +1,6 @@
 return b{
+    $ hello.elf: hello.c
+        gcc $input -o $output -static
     $ test.elf: test.S
         gcc -nostdlib $input -o $output -static
 }

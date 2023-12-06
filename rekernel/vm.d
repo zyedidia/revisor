@@ -24,6 +24,9 @@ struct VmMap {
 VmMap vm_lookup(Pagetable* pt, uintptr va) {
     uint level;
     Pte* pte = pt.walk(va, level);
+    if (!pte) {
+        return VmMap(0, Perm(), 0);
+    }
     usize ptesz = Pagetable.lvl2size(level);
     uintptr va_align = va & ~(ptesz - 1);
 

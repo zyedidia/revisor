@@ -11,6 +11,7 @@ void* aligned_alloc(usize alignment, usize size);
 void free(void* ptr);
 
 usize strlen(const(char)* s);
+usize strnlen(const(char*) s, usize len);
 
 int open(const char* name, int flags, int mode);
 ssize read(int fd, void* buf, usize count);

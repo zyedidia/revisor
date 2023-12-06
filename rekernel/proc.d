@@ -7,24 +7,15 @@ import arch.sys;
 
 import core.alloc;
 import core.lib;
+import core.math;
 
 import elf;
 import vm;
 
-private enum ALIGN = (PAGESIZE - 1);
-
-private uintptr truncpg(uintptr addr) {
-    return addr & ~ALIGN;
-}
-
-private uintptr ceilpg(uintptr addr) {
-    return (addr + ALIGN) & ~ALIGN;
-}
-
 private enum {
     KSTACK_SIZE = 4 * PAGESIZE,
     USTACK_SIZE = 8 * PAGESIZE,
-    USTACK_VA = 0x7fff0000,
+    ulong USTACK_VA = 0x7fff0000,
 }
 
 struct Proc {
@@ -34,6 +25,7 @@ struct Proc {
     Pagetable* pt;
 
     int pid;
+    uintptr brk;
 
     align(16) ubyte[KSTACK_SIZE] kstack;
     static assert(kstack.length % 16 == 0);
@@ -80,7 +72,7 @@ struct Proc {
             goto err;
         if (!p.load(kfd))
             goto err;
-        if (!p.setup())
+        if (!p.setup(pathname))
             goto err;
 
         close(kfd);
@@ -117,18 +109,21 @@ err:
                 continue;
             uintptr start = truncpg(iter.vaddr);
             uintptr end = ceilpg(iter.vaddr + iter.memsz);
-            ubyte[] segment = kalloc(end - start);
+            void* segment = aligned_alloc(PAGESIZE, end - start);
             if (!segment)
                 goto err;
 
             if (lseek(kfd, iter.offset, SEEK_SET) < 0)
                 goto err;
-            if (read(kfd, segment.ptr, iter.filesz) != iter.filesz)
+            if (read(kfd, segment + (iter.vaddr - start), iter.filesz) != iter.filesz)
                 goto err;
-            memset(segment.ptr + iter.filesz, 0, iter.memsz - iter.filesz);
+            memset(segment + iter.filesz, 0, iter.memsz - iter.filesz);
 
-            if (!pt.map_region(start, ka2pa(segment.ptr), segment.length, Perm.READ | Perm.WRITE | Perm.USER))
+            if (!pt.map_region(start, ka2pa(segment), end - start, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER))
                 goto err;
+
+            if (end > brk)
+                brk = end;
         }
 
         trapframe.epc = ehdr.entry;
@@ -140,7 +135,7 @@ err:
         return false;
     }
 
-    bool setup() {
+    bool setup(const char* name) {
         ubyte[] ustack = kzalloc(USTACK_SIZE);
         if (!ustack) {
             return false;
@@ -151,7 +146,28 @@ err:
             return false;
         }
 
-        trapframe.regs.sp = USTACK_VA + USTACK_SIZE;
+        ubyte* stack_top = ustack.ptr + ustack.length;
+        uintptr ustack_top = USTACK_VA + ustack.length;
+
+        char* p_name = cast(char*) stack_top - PAGESIZE;
+        uintptr p_uname = ustack_top - PAGESIZE;
+        usize len = strnlen(name, 64) + 1;
+        memcpy(p_name, name, len);
+
+        ulong* p_argc = cast(ulong*) (stack_top - 2 * PAGESIZE);
+        trapframe.regs.sp = ustack_top - 2 * PAGESIZE;
+        *p_argc++ = 1;
+
+        uintptr* p_argv = cast(uintptr*) p_argc;
+        *p_argv++ = p_uname; // argv
+        *p_argv++ = 0;
+        *p_argv++ = 0; // envp
+
+        Auxv* av = cast(Auxv*) p_argv;
+        *av++ = Auxv(AT_ENTRY, trapframe.epc);
+        *av++ = Auxv(AT_EXECFN, cast(ulong) p_argv[0]);
+        *av++ = Auxv(AT_PAGESZ, PAGESIZE);
+        *av++ = Auxv(AT_NULL, 0);
 
         return true;
     }
