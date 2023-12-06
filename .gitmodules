@@ -3,4 +3,5 @@
 	url = https://github.com/bminor/newlib
 [submodule "rekernel/picolibc"]
 	path = rekernel/picolibc
-	url = https://github.com/picolibc/picolibc
+    branch = general-regs-only
+	url = https://github.com/zyedidia/picolibc

@@ -102,7 +102,6 @@ extern (C) {
     }
 
     void __assert(immutable(char)* msg, immutable(char)* file, int line) {
-        printf("%s:%d: %s\n", file, line, msg);
-        exit(1);
+        panicf("%s:%d: %s\n", file, line, msg);
     }
 }

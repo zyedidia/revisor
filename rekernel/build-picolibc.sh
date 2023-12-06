@@ -3,6 +3,8 @@
 mkdir -p build
 cd build
 
+export CFLAGS="-mgeneral-regs-only"
+
 meson \
     -Dtls-model=local-exec \
     -Dmultilib=false \

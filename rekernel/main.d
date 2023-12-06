@@ -16,7 +16,6 @@ extern (C) void kmain() {
         printf("failed to make proc\n");
         return;
     }
-    printf("made proc %p\n", p);
 
     kswitch(p, &old, &p.context);
 }

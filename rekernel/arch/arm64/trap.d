@@ -16,14 +16,12 @@ extern (C) {
     void kernel_exception(Regs* regs) {
         cast(void) regs;
         ulong exc_class = bits.get(SysReg.esr_el1, 31, 26);
-        printf("kernel exception: esr: 0x%lx, elr: 0x%lx\n", exc_class, SysReg.elr_el1);
-        exit(1);
+        panicf("kernel exception: esr: 0x%lx, elr: 0x%lx\n", exc_class, SysReg.elr_el1);
     }
 
     void kernel_interrupt(Regs* regs) {
         cast(void) regs;
-        printf("kernel interrupt\n");
-        exit(1);
+        panicf("kernel interrupt\n");
     }
 
     void user_exception(Proc* p) {
@@ -43,8 +41,7 @@ extern (C) {
     }
 
     void user_interrupt(Proc* p) {
-        printf("user interrupt\n");
-        exit(1);
+        panicf("user interrupt\n");
     }
 }
 

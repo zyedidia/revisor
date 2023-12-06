@@ -16,12 +16,16 @@ local dsrc = knit.join(
     knit.glob("alloc/*.d")
 )
 
+local csrc = knit.join(
+    knit.glob("tinyprintf/*.c")
+)
+
 local ssrc = knit.join(
     knit.glob("*.S"),
     knit.glob(f"arch/$arch/*.S")
 )
 
-local obj = knit.join(knit.extrepl(dsrc, ".d", ".o"), knit.extrepl(ssrc, ".S", ".o"))
+local obj = knit.join(knit.extrepl(dsrc, ".d", ".o"), knit.extrepl(ssrc, ".S", ".o"), knit.extrepl(csrc, ".c", ".o"))
 obj = knit.prefix(obj, ".")
 
 local picolib := build/install
@@ -58,6 +62,8 @@ return b{
         $(dc) $(makedep(dc, dep)) -c $input -$o $output $(flags.dc)
     $ .%.o: %.S
         gcc -c $input -o $output -D$darch
+    $ .%.o: %.c
+        gcc -nostdlib -ffreestanding -O2 -Wall -c $input -o $output -mgeneral-regs-only
 
     $ link/kernel.out.ld: link/kernel.ld
         cpp -P -D$darch $input > $output

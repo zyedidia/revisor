@@ -141,5 +141,5 @@ uintptr sys_brk(Proc* p, uintptr addr) {
 
 noreturn sys_exit(Proc* p, int status) {
     printf("%d: exited\n", p.pid);
-    exit(1);
+    exit(0);
 }

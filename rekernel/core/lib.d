@@ -19,6 +19,13 @@ ssize write(int fd, void* buf, usize count);
 ssize lseek(int fd, ssize offset, int whence);
 int close(int fd);
 
+usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
+
+extern (C) __gshared {
+    extern void* stdout;
+    extern void* stderr;
+}
+
 noreturn exit(int status);
 
 enum {
