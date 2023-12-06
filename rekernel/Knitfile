@@ -1,5 +1,9 @@
 local knit = require("knit")
 
+function makedep(dc, s)
+    return sel(dc == "gdc", f"-M -MF $s", f"-makedeps=$s")
+end
+
 local _, uconf = pcall(include, "conf.knit")
 
 local arch = cli.arch or uconf.arch or "arm64"
@@ -23,8 +27,21 @@ obj = knit.prefix(obj, ".")
 local picolib := build/install
 local flags := -Wall -nostdlib -O2 -I. -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
 
+local dc = cli.dc or "ldc2"
+local o = sel(dc == "gdc", "o", "of")
+
+local platform = {
+    amd64 := -mattr=-x87,-mmx,-sse
+    arm64 := -mattr=-fp-armv8,-neon
+}
+
+local dflags = {
+    gdc := -O2 -I$picolib/include -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -fversion=$arch -ftransition=tls -mgeneral-regs-only -ffunction-sections -fdata-sections
+    ldc2 := -O2 -I$picolib/include -betterC -d-version=$arch $(platform[arch]) -function-sections -data-sections
+}
+
 local flags = {
-    dc := -O2 -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -I$picolib/include -fversion=$arch -ftransition=tls -mgeneral-regs-only
+    dc = dflags[dc],
     ld := -nostdlib -L$picolib/lib -lc -lgcc -Wl,--gc-sections
 }
 
@@ -33,14 +50,12 @@ if arch == "amd64" then
     flags.ld = flags.ld .. " -mcmodel=kernel -fno-pic"
 end
 
-local dc = "gdc"
-
 return b{
     $ kernel.elf: $obj link/kernel.out.ld[I]
         gcc $input -o $output -Tlink/kernel.out.ld -static $(flags.ld)
 
     $ .%.o:D[.%.dep]: %.d
-        $(dc) -O2 -MM -MF $dep -c $input -o $output $(flags.dc)
+        $(dc) $(makedep(dc, dep)) -c $input -$o $output $(flags.dc)
     $ .%.o: %.S
         gcc -c $input -o $output -D$darch
 

@@ -13,6 +13,7 @@ meson \
     -Dprefix=$PWD/install \
     -Dincludedir=include \
     -Dlibdir=lib \
+    -Dformat-default=long-long \
     -Dthread-local-storage=false \
     -Dspecsdir=none \
     ../picolibc
