@@ -4,6 +4,10 @@ function makedep(dc, s)
     return sel(dc == "gdc", f"-M -MF $s", f"-makedeps=$s")
 end
 
+function cmodel(dc, s)
+    return sel(dc == "gdc", f"-mcmodel=$s", f"-code-model=$s")
+end
+
 local _, uconf = pcall(include, "conf.knit")
 
 local arch = cli.arch or uconf.arch or "arm64"
@@ -40,18 +44,18 @@ local platform = {
 }
 
 local dflags = {
-    gdc := -O2 -I$picolib/include -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -fversion=$arch -ftransition=tls -mgeneral-regs-only -ffunction-sections -fdata-sections
-    ldc2 := -O2 -I$picolib/include -betterC -d-version=$arch $(platform[arch]) -function-sections -data-sections
+    gdc := -O2 -I$picolib/include -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -fversion=$arch -ftransition=tls -mgeneral-regs-only -ffunction-sections -fdata-sections -fno-pic
+    ldc2 := -O2 -I$picolib/include -betterC -d-version=$arch $(platform[arch]) -function-sections -data-sections -relocation-model=static
 }
 
 local flags = {
     dc = dflags[dc],
-    ld := -nostdlib -L$picolib/lib -lc -lgcc -Wl,--gc-sections
+    ld := -nostdlib -L$picolib/lib -lc -lgcc -Wl,--gc-sections -fno-pic
 }
 
 if arch == "amd64" then
-    flags.dc = flags.dc .. " -mcmodel=kernel -fno-pic"
-    flags.ld = flags.ld .. " -mcmodel=kernel -fno-pic"
+    flags.dc := $(flags.dc) $(cmodel(dc, "kernel"))
+    flags.ld := $(flags.ld) -mcmodel=kernel
 end
 
 return b{
