@@ -19,12 +19,18 @@ enum Sys {
     EXIT_GROUP = 94,
     SET_TID_ADDRESS = 96,
     SET_ROBUST_LIST = 99,
+    TGKILL = 131,
+    RT_SIGACTION = 134,
+    RT_SIGPROCMASK = 135,
+    UNAME = 160,
     GETPID = 172,
     GETUID = 174,
     GETEUID = 175,
     GETGID = 176,
     GETEGID = 177,
+    GETTID = 178,
     BRK = 214,
+    MMAP = 222,
     RSEQ = 293,
 }
 
@@ -36,8 +42,18 @@ enum Err {
     NOSYS = -38,
 }
 
+private bool checkptr(Proc* p, uintptr ptr, usize size) {
+    // TODO: improve
+    if (ptr >= USER_END) {
+        return false;
+    }
+    return true;
+}
+
 uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulong a3, ulong a4, ulong a5) {
     uintptr ret;
+
+    printf("%lx: syscall: %ld\n", p.trapframe.epc, sysno);
 
     switch (sysno) {
     case Sys.GETPID:
@@ -52,6 +68,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.WRITEV:
         ret = sys_writev(p, a0, a1, a2);
         break;
+    case Sys.UNAME:
+        ret = sys_uname(p, cast(Utsname*) a0);
+        break;
     case Sys.EXIT, Sys.EXIT_GROUP:
         sys_exit(p, cast(int) a0);
     case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID, Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL:
@@ -62,6 +81,8 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         printf("[warning]: unknown syscall: %ld\n", sysno);
         ret = Err.NOSYS;
     }
+
+    printf("ret = %lx\n", ret);
 
     return ret;
 }
@@ -77,14 +98,14 @@ struct Iovec {
 
 ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
     int fd = cast(int) a0;
-    if (fd != 1) {
+    if (fd != 2) {
         return Err.BADF;
     }
     uintptr iovp = a1;
-    if (iovp > USER_END) {
+    usize iovcnt = a2;
+    if (!checkptr(p, iovp, iovcnt * Iovec.sizeof)) {
         return Err.FAULT;
     }
-    usize iovcnt = a2;
     Iovec[] iov = (cast(Iovec*) iovp)[0 .. iovcnt];
     ssize total = 0;
     // TODO: additional checks on iov
@@ -95,10 +116,10 @@ ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
 }
 
 ssize sys_write(Proc* p, int fd, uintptr buf, usize size) {
-    if (fd != 1) {
+    if (fd != 2) {
         return Err.BADF;
     }
-    if (buf > USER_END) {
+    if (!checkptr(p, buf, size)) {
         return Err.FAULT;
     }
     ssize i = 0;
@@ -115,7 +136,7 @@ ssize sys_write(Proc* p, int fd, uintptr buf, usize size) {
 }
 
 uintptr sys_brk(Proc* p, uintptr addr) {
-    if (addr > USER_END) {
+    if (!checkptr(p, addr, 1)) {
         return Err.FAULT;
     } else if (addr == 0) {
         return p.brk;
@@ -142,4 +163,35 @@ uintptr sys_brk(Proc* p, uintptr addr) {
 noreturn sys_exit(Proc* p, int status) {
     printf("%d: exited\n", p.pid);
     exit(0);
+}
+
+enum {
+    UTSNAME_LENGTH = 65,
+}
+
+struct Utsname {
+    char[UTSNAME_LENGTH] sysname;
+    char[UTSNAME_LENGTH] nodename;
+    char[UTSNAME_LENGTH] release;
+    char[UTSNAME_LENGTH] version_;
+    char[UTSNAME_LENGTH] machine;
+}
+
+int sys_uname(Proc* p, Utsname* buf) {
+    if (!checkptr(p, cast(uintptr) buf, Utsname.sizeof)) {
+        return Err.FAULT;
+    }
+
+    void addstring(char[] data, string s) {
+        memcpy(data.ptr, s.ptr, min(s.length, data.length - 1));
+        data[$-1] = '\0';
+    }
+
+    char* info = cast(char*) USER_END - PAGESIZE;
+    addstring(buf.sysname, "Linux");
+    buf.nodename = null;
+    addstring(buf.release, "6.0.0-revisor");
+    buf.version_ = null;
+    buf.machine = null;
+    return 0;
 }

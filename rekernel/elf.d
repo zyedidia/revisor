@@ -21,7 +21,8 @@ enum {
     AT_GID    = 13,
     AT_EGID   = 14,
     AT_CLKTCK = 17,
-
+    AT_SECURE = 23,
+    AT_RANDOM = 25,
     AT_EXECFN = 31,
 }
 

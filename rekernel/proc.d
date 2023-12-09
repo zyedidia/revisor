@@ -164,9 +164,12 @@ err:
         *p_argv++ = 0; // envp
 
         Auxv* av = cast(Auxv*) p_argv;
+        *av++ = Auxv(AT_SECURE, 0);
         *av++ = Auxv(AT_ENTRY, trapframe.epc);
         *av++ = Auxv(AT_EXECFN, cast(ulong) p_argv[0]);
         *av++ = Auxv(AT_PAGESZ, PAGESIZE);
+        // TODO: use actual random bytes
+        *av++ = Auxv(AT_RANDOM, p_uname);
         *av++ = Auxv(AT_NULL, 0);
 
         return true;

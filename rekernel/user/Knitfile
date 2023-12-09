@@ -1,4 +1,5 @@
 return b{
+    $ all:VB: hello.elf test.elf
     $ hello.elf: hello.c
         gcc $input -o $output -static
     $ test.elf: test.S

@@ -56,7 +56,7 @@ struct SysReg {
 }
 
 enum {
-    USER_END     = 0x0000_ffff_ffff_ffff,
+    USER_END     = 0x0001_0000_0000_0000,
     KERNEL_START = 0xffff_0000_0000_0000,
 
     SPSR_EL0 = 0,
