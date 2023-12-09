@@ -30,7 +30,7 @@ func (m *Machine) init() error {
 	return nil
 }
 
-func (m *Machine) SetupRegs(pc, cmdline uint64) error {
+func (m *Machine) SetupRegs(pc, argc, argv uint64) error {
 	for _, cpu := range m.vm.vcpus {
 		if err := cpu.SetPc(pc); err != nil {
 			return err
@@ -38,7 +38,10 @@ func (m *Machine) SetupRegs(pc, cmdline uint64) error {
 		if err := cpu.SetReg(0, uint64(len(m.vm.mem))); err != nil {
 			return err
 		}
-		if err := cpu.SetReg(1, cmdline); err != nil {
+		if err := cpu.SetReg(1, argc); err != nil {
+			return err
+		}
+		if err := cpu.SetReg(2, argv); err != nil {
 			return err
 		}
 	}

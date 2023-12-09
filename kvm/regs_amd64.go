@@ -4,7 +4,7 @@ import (
 	"unsafe"
 )
 
-func (vcpu *vcpu) initRegs(rip, bp, memsz uint64) error {
+func (vcpu *vcpu) initRegs(rip, argc, argv, memsz uint64) error {
 	regs, err := vcpu.GetRegs()
 	if err != nil {
 		return err
@@ -13,9 +13,9 @@ func (vcpu *vcpu) initRegs(rip, bp, memsz uint64) error {
 	// Clear all FLAGS bits, except bit 1 which is always set.
 	regs.Rflags = 2
 	regs.Rip = rip
-	// Create stack which will grow down.
-	regs.Rsi = bp
 	regs.Rdi = memsz
+	regs.Rsi = argc
+	regs.Rdx = argv
 
 	if err := vcpu.SetRegs(regs); err != nil {
 		return err

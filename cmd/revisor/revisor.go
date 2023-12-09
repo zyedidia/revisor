@@ -35,7 +35,7 @@ func main() {
 	}
 	defer kernel.Close()
 
-	err = revisor.Boot(m, kernel, "", *trace)
+	err = revisor.Boot(m, kernel, args[1:], *trace)
 	if err != nil {
 		log.Fatal(err)
 	}

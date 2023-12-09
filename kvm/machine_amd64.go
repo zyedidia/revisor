@@ -35,9 +35,9 @@ func (vm *vm) setTSSAddr(addr uint32) error {
 	return err
 }
 
-func (m *Machine) SetupRegs(rip, bp uint64) error {
+func (m *Machine) SetupRegs(rip, argc, argv uint64) error {
 	for _, cpu := range m.vm.vcpus {
-		if err := cpu.initRegs(rip, bp, uint64(len(m.vm.mem))); err != nil {
+		if err := cpu.initRegs(rip, argc, argv, uint64(len(m.vm.mem))); err != nil {
 			return err
 		}
 		if err := cpu.initSregs(m.vm.mem); err != nil {

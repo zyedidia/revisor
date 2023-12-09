@@ -13,24 +13,28 @@
 
 .globl _start
 _start:
-	ldr x1, =TCR
-	msr tcr_el1, x1
-	ldr x1, =0xff
-	msr mair_el1, x1
-	adr x0, l0pt
-	msr ttbr0_el1, x0
-	msr ttbr1_el1, x0
+	// x0: memory size
+	// x1: argc
+	// x2: argv
 
-	mrs x0, sctlr_el1
-	orr x0, x0, #(0x1 << 2)  // dcache
-	orr x0, x0, #(0x1 << 12) // icache
-	orr x0, x0, #0x1         // mmu
-	msr sctlr_el1, x0
+	ldr x4, =TCR
+	msr tcr_el1, x4
+	ldr x4, =0xff
+	msr mair_el1, x4
+	adr x3, l0pt
+	msr ttbr0_el1, x3
+	msr ttbr1_el1, x3
+
+	mrs x3, sctlr_el1
+	orr x3, x3, #(0x1 << 2)  // dcache
+	orr x3, x3, #(0x1 << 12) // icache
+	orr x3, x3, #0x1         // mmu
+	msr sctlr_el1, x3
 	dsb sy
 	isb
 
-	ldr x0, =_start64
-	br x0
+	ldr x3, =_start64
+	br x3
 
 .section ".lowdata", "a"
 
@@ -55,8 +59,14 @@ _start64:
 	adr x8, init_stack_end
 	mov sp, x8
 
+	// save x1 and x2 (argc and argv)
+	mov x21, x1
+	mov x22, x2
+
 	bl kinit
 	bl __libc_init_array
+	mov x0, x21
+	mov x1, x22
 	bl kmain
 	bl __libc_fini_array
 	bl exit

@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	physSysBase = 0x0000_4000
-	physRamBase = 0x4000_0000
+	physSysBase  = 0x0000_4000
+	physRamBase  = 0x4000_0000
+	physKernBase = 0x4000_8000
 )
 
 type vm struct {

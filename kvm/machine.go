@@ -14,11 +14,6 @@ import (
 	"unsafe"
 )
 
-const (
-	bootParamAddr = 0x10000
-	cmdlineAddr   = 0x20000
-)
-
 type HypercallHandler interface {
 	Hypercall(machine *Machine, cpu int, number, a0, a1, a2, a3, a4, a5 uint64) (r0 uint64, err error)
 }
@@ -87,7 +82,7 @@ func NewMachine(kvmPath string, ncpus int, memSize int, handler HypercallHandler
 	return m, nil
 }
 
-func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
+func (m *Machine) LoadKernel(kernel io.ReaderAt, args []string) error {
 	e, err := elf.NewFile(kernel)
 	if err != nil {
 		return err
@@ -112,11 +107,19 @@ func (m *Machine) LoadKernel(kernel io.ReaderAt, params string) error {
 		kernSize += n
 	}
 
+	argv := argv{
+		args: args,
+	}
+	argvAddr, err := argv.WriteAt(m.vm.mem, 0)
+	if err != nil {
+		return err
+	}
+
 	if kernSize == 0 {
 		return fmt.Errorf("kernel is empty")
 	}
 
-	if err := m.SetupRegs(entry, cmdlineAddr); err != nil {
+	if err := m.SetupRegs(entry, uint64(len(args)), argvAddr); err != nil {
 		return err
 	}
 

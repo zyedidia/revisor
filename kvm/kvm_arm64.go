@@ -21,3 +21,7 @@ func ka2pa(ka uint64) uint64 {
 	}
 	return ka
 }
+
+func pa2ka(pa uint64) uint64 {
+	return pa + kernBase
+}

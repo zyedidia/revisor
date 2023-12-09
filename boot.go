@@ -8,8 +8,8 @@ import (
 	"github.com/zyedidia/revisor/kvm"
 )
 
-func Boot(m *kvm.Machine, kernel io.ReaderAt, params string, trace bool) error {
-	err := m.LoadKernel(kernel, params)
+func Boot(m *kvm.Machine, kernel io.ReaderAt, args []string, trace bool) error {
+	err := m.LoadKernel(kernel, args)
 	if err != nil {
 		return err
 	}
