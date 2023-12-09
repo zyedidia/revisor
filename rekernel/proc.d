@@ -109,15 +109,16 @@ err:
                 continue;
             uintptr start = truncpg(iter.vaddr);
             uintptr end = ceilpg(iter.vaddr + iter.memsz);
+            uintptr offset = iter.vaddr - start;
             void* segment = aligned_alloc(PAGESIZE, end - start);
             if (!segment)
                 goto err;
 
             if (lseek(kfd, iter.offset, SEEK_SET) < 0)
                 goto err;
-            if (read(kfd, segment + (iter.vaddr - start), iter.filesz) != iter.filesz)
+            if (read(kfd, segment + offset, iter.filesz) != iter.filesz)
                 goto err;
-            memset(segment + iter.filesz, 0, iter.memsz - iter.filesz);
+            memset(segment + offset + iter.filesz, 0, iter.memsz - iter.filesz);
 
             if (!pt.map_region(start, ka2pa(segment), end - start, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER))
                 goto err;
@@ -170,6 +171,13 @@ err:
         *av++ = Auxv(AT_PAGESZ, PAGESIZE);
         // TODO: use actual random bytes
         *av++ = Auxv(AT_RANDOM, p_uname);
+        *av++ = Auxv(AT_HWCAP, 0x0);
+        *av++ = Auxv(AT_HWCAP2, 0x0);
+        *av++ = Auxv(AT_FLAGS, 0x0);
+        *av++ = Auxv(AT_UID, 1000);
+        *av++ = Auxv(AT_EUID, 1000);
+        *av++ = Auxv(AT_GID, 1000);
+        *av++ = Auxv(AT_EGID, 1000);
         *av++ = Auxv(AT_NULL, 0);
 
         return true;

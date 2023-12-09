@@ -4,7 +4,10 @@ import core.emplace;
 import core.lib : malloc, memset, free, aligned_alloc;
 
 void* kallocpage() {
-    return aligned_alloc(PAGESIZE, PAGESIZE);
+    ubyte[] b = kzalloc(PAGESIZE);
+    if (!b)
+        return null;
+    return b.ptr;
 }
 
 ubyte[] kalloc(usize sz) {

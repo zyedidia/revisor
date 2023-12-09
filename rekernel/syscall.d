@@ -15,10 +15,13 @@ enum Sys {
     IOCTL = 29,
     WRITE = 64,
     WRITEV = 66,
+    READLINKAT = 78,
+    NEWFSTATAT = 79,
     EXIT = 93,
     EXIT_GROUP = 94,
     SET_TID_ADDRESS = 96,
     SET_ROBUST_LIST = 99,
+    CLOCK_GETTIME = 113,
     TGKILL = 131,
     RT_SIGACTION = 134,
     RT_SIGPROCMASK = 135,
@@ -31,6 +34,9 @@ enum Sys {
     GETTID = 178,
     BRK = 214,
     MMAP = 222,
+    MPROTECT = 226,
+    PRLIMIT64 = 261,
+    GETRANDOM = 278,
     RSEQ = 293,
 }
 
@@ -53,8 +59,6 @@ private bool checkptr(Proc* p, uintptr ptr, usize size) {
 uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulong a3, ulong a4, ulong a5) {
     uintptr ret;
 
-    printf("%lx: syscall: %ld\n", p.trapframe.epc, sysno);
-
     switch (sysno) {
     case Sys.GETPID:
         ret = sys_getpid(p);
@@ -73,7 +77,14 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         break;
     case Sys.EXIT, Sys.EXIT_GROUP:
         sys_exit(p, cast(int) a0);
-    case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID, Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL:
+    case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID:
+        ret = 1000;
+        break;
+    case Sys.MPROTECT:
+        // TODO: mprotect
+        ret = 0;
+        break;
+    case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64:
         // ignored
         ret = 0;
         break;
@@ -81,8 +92,6 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         printf("[warning]: unknown syscall: %ld\n", sysno);
         ret = Err.NOSYS;
     }
-
-    printf("ret = %lx\n", ret);
 
     return ret;
 }
@@ -98,7 +107,7 @@ struct Iovec {
 
 ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
     int fd = cast(int) a0;
-    if (fd != 2) {
+    if (fd != 1 && fd != 2) {
         return Err.BADF;
     }
     uintptr iovp = a1;
@@ -116,7 +125,7 @@ ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
 }
 
 ssize sys_write(Proc* p, int fd, uintptr buf, usize size) {
-    if (fd != 2) {
+    if (fd != 1 && fd != 2) {
         return Err.BADF;
     }
     if (!checkptr(p, buf, size)) {
@@ -141,17 +150,19 @@ uintptr sys_brk(Proc* p, uintptr addr) {
     } else if (addr == 0) {
         return p.brk;
     }
+    uintptr oldbrk = ceilpg(p.brk);
     p.brk = addr;
     uint level;
     Pte* pte = p.pt.walk(addr, level);
     if (!pte) {
         return Err.NOMEM;
     } else if (!pte.valid) {
-        void* page = kallocpage();
-        if (!page)
+        usize diff = ceilpg(addr) - oldbrk;
+        ubyte[] data = kzalloc(diff);
+        if (!data)
             return Err.NOMEM;
-        if (!p.pt.map_region(truncpg(addr), ka2pa(page), PAGESIZE, Perm.READ | Perm.WRITE | Perm.USER)) {
-            kfree(page);
+        if (!p.pt.map_region(oldbrk, ka2pa(data.ptr), data.length, Perm.READ | Perm.WRITE | Perm.USER)) {
+            kfree(data);
             return Err.NOMEM;
         }
     } else if ((pte.perm & Perm.USER) == 0) {
