@@ -422,19 +422,29 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 
 #if TINYPRINTF_DEFINE_TFP_PRINTF
 static putcf stdout_putf;
-static void *stdout_putp;
+static putcf stderr_putf;
+static void *std_putp;
 
-void init_printf(void *putp, putcf putf)
+void init_printf(void *putp, putcf oputf, putcf eputf)
 {
-    stdout_putf = putf;
-    stdout_putp = putp;
+    stdout_putf = oputf;
+    stderr_putf = eputf;
+    std_putp = putp;
+}
+
+void eprintf(char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(std_putp, stderr_putf, fmt, va);
+    va_end(va);
 }
 
 void printf(char *fmt, ...)
 {
     va_list va;
     va_start(va, fmt);
-    tfp_format(stdout_putp, stdout_putf, fmt, va);
+    tfp_format(std_putp, stdout_putf, fmt, va);
     va_end(va);
 }
 
@@ -444,7 +454,7 @@ void panicf(char* fmt, ...)
 
     va_list va;
     va_start(va, fmt);
-    tfp_format(stdout_putp, stdout_putf, fmt, va);
+    tfp_format(std_putp, stderr_putf, fmt, va);
     va_end(va);
     exit(1);
 }

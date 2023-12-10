@@ -24,6 +24,7 @@ usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
 extern (C) __gshared {
     extern void* stdout;
     extern void* stderr;
+    extern void* stdin;
 }
 
 noreturn exit(int status);

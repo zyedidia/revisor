@@ -12,14 +12,18 @@ __gshared {
 
 alias PutcFn = void function(void*, char);
 
-extern (C) void init_printf(void* putp, PutcFn putcf);
+extern (C) void init_printf(void* putp, PutcFn oputcf, PutcFn eputcf);
 
-private void putc(void* _, char c) {
-    assert(fwrite(&c, 1, 1, stdout) == 1);
+private void oputc(void* _, char c) {
+    ensure(fwrite(&c, 1, 1, stdout) == 1);
+}
+
+private void eputc(void* _, char c) {
+    ensure(fwrite(&c, 1, 1, stderr) == 1);
 }
 
 extern (C) void kinit(usize memsz) {
-    init_printf(null, &putc);
+    init_printf(null, &oputc, &eputc);
 
     memory_size = memsz;
     arch_init();

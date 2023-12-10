@@ -13,13 +13,13 @@ extern (C) void kmain(int argc, char** argv) {
     printf("arrived in kmain at %p\n", &kmain);
 
     if (argc == 0) {
-        printf("error: no user application given\n");
+        eprintf("error: no user application given\n");
         return;
     }
 
     Proc* p = Proc.make_from_file(argv[0]);
     if (!p) {
-        printf("failed to make proc\n");
+        eprintf("failed to make proc\n");
         return;
     }
 

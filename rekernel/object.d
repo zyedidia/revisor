@@ -20,8 +20,18 @@ pragma(printf)
 extern (C) void printf(const char* fmt, ...);
 
 pragma(printf)
+extern (C) void eprintf(const char* fmt, ...);
+
+pragma(printf)
 extern (C) void panicf(const char* fmt, ...);
 
 enum PAGESIZE = 4096;
 
 struct Empty {}
+
+void ensure(bool b, string msg = "ensure failure", string file = __FILE__, int line = __LINE__) {
+    import core.exception : panic;
+    if (!b) {
+        panic(file, line, msg);
+    }
+}
