@@ -17,7 +17,7 @@ extern (C) void kmain(int argc, char** argv) {
         return;
     }
 
-    Proc* p = Proc.make_from_file(argv[0]);
+    Proc* p = Proc.make_from_file(argv[0], argc, argv);
     if (!p) {
         eprintf("failed to make proc\n");
         return;

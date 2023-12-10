@@ -22,6 +22,7 @@ private enum {
     uintptr USTACK_VA  = 0x0000_7fff_0000,
     uintptr MMAP_START = 0x0001_0000_0000,
     usize MMAP_SIZE    = gb(512),
+    int ARGC_MAX       = 1024,
 }
 
 struct Proc {
@@ -85,7 +86,7 @@ struct Proc {
         return p;
     }
 
-    static Proc* make_from_file(const char* pathname) {
+    static Proc* make_from_file(char* pathname, int argc, char** argv) {
         int kfd = open(pathname, O_RDONLY, 0);
         if (kfd < 0) {
             return null;
@@ -96,7 +97,7 @@ struct Proc {
             goto err;
         if (!p.load(kfd))
             goto err;
-        if (!p.setup(pathname))
+        if (!p.setup(argc, argv))
             goto err;
 
         close(kfd);
@@ -160,7 +161,11 @@ err:
         return false;
     }
 
-    bool setup(const char* name) {
+    bool setup(int argc, char** argv) {
+        if (argc <= 0 || argc >= ARGC_MAX) {
+            return false;
+        }
+
         ubyte[] ustack = kzalloc(USTACK_SIZE);
         if (!ustack) {
             return false;
@@ -171,30 +176,46 @@ err:
             return false;
         }
 
+        uintptr[ARGC_MAX] argv_ptrs;
+
         ubyte* stack_top = ustack.ptr + ustack.length;
         uintptr ustack_top = USTACK_VA + ustack.length;
+        char* p_argv = cast(char*) stack_top - PAGESIZE;
+        uintptr p_uargv = ustack_top - PAGESIZE;
 
-        char* p_name = cast(char*) stack_top - PAGESIZE;
-        uintptr p_uname = ustack_top - PAGESIZE;
-        usize len = strnlen(name, 64) + 1;
-        memcpy(p_name, name, len);
+        for (int i = 0; i < argc; i++) {
+            assert(argv[i]);
+            usize len = strnlen(argv[i], 64);
+            argv_ptrs[i] = p_uargv;
+            memcpy(p_argv, argv[i], len);
+            p_argv += len;
+            *p_argv++ = 0;
+            p_uargv += len + 1;
+        }
 
-        ulong* p_argc = cast(ulong*) (stack_top - 2 * PAGESIZE);
-        trapframe.regs.sp = ustack_top - 2 * PAGESIZE;
-        *p_argc++ = 1;
+        p_argv = cast(char*) stack_top - 2 * PAGESIZE;
+        p_uargv = ustack_top - 2 * PAGESIZE;
 
-        uintptr* p_argv = cast(uintptr*) p_argc;
-        *p_argv++ = p_uname; // argv
-        *p_argv++ = 0;
-        *p_argv++ = 0; // envp
+        trapframe.regs.sp = p_uargv;
 
-        Auxv* av = cast(Auxv*) p_argv;
+        long* p_argc = cast(long*) p_argv;
+        *p_argc++ = argc;
+
+        uintptr* p_argvp = cast(uintptr*) p_argc;
+        uintptr* p_argvp_start = p_argvp;
+        for (usize i = 0; i < argc; i++) {
+            *p_argvp++ = argv_ptrs[i];
+        }
+        *p_argvp++ = 0;
+        *p_argvp++ = 0; // envp
+
+        Auxv* av = cast(Auxv*) p_argvp;
         *av++ = Auxv(AT_SECURE, 0);
         *av++ = Auxv(AT_ENTRY, trapframe.epc);
-        *av++ = Auxv(AT_EXECFN, cast(ulong) p_argv[0]);
+        *av++ = Auxv(AT_EXECFN, cast(ulong) p_argvp_start[0]);
         *av++ = Auxv(AT_PAGESZ, PAGESIZE);
         // TODO: use actual random bytes
-        *av++ = Auxv(AT_RANDOM, p_uname);
+        *av++ = Auxv(AT_RANDOM, p_argvp_start[0]);
         *av++ = Auxv(AT_HWCAP, 0x0);
         *av++ = Auxv(AT_HWCAP2, 0x0);
         *av++ = Auxv(AT_FLAGS, 0x0);

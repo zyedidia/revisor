@@ -34,6 +34,7 @@ enum Sys {
     GETGID = 176,
     GETEGID = 177,
     GETTID = 178,
+    SYSINFO = 179,
     BRK = 214,
     MUNMAP = 215,
     MREMAP = 216,
@@ -88,7 +89,8 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         // TODO: mprotect
         ret = 0;
         break;
-    case Sys.MREMAP:
+    case Sys.MREMAP, Sys.SYSINFO:
+        // not implemented
         ret = Err.NOSYS;
         break;
     case Sys.MMAP:

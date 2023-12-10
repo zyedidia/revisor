@@ -57,6 +57,14 @@ Perm prot2perm(int prot) {
     return perm;
 }
 
+enum {
+    MAP_SHARED    = 0x001,
+    MAP_PRIVATE   = 0x002,
+    MAP_FIXED     = 0x010,
+    MAP_FILE      = 0x000,
+    MAP_ANONYMOUS = 0x020,
+}
+
 struct VmArea {
     int prot;
     int flags;

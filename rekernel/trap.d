@@ -50,6 +50,7 @@ void pagefault(Proc* p, uintptr ptr, Fault type) {
         }
     }
 
-    printf("%d: killed\n", p.pid);
+    printf("%d: pagefault on address 0x%lx (pc=%lx)\n", p.pid, ptr, p.trapframe.epc);
+
     sys_exit(p, 1);
 }
