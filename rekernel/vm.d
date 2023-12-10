@@ -39,6 +39,24 @@ VmMap vm_lookup(Pagetable* pt, uintptr va) {
     );
 }
 
+enum {
+    PROT_NONE  = 0,
+    PROT_READ  = 1,
+    PROT_WRITE = 2,
+    PROT_EXEC  = 4,
+}
+
+Perm prot2perm(int prot) {
+    Perm perm;
+    if ((prot & PROT_READ) != 0)
+        perm |= Perm.READ;
+    if ((prot & PROT_WRITE) != 0)
+        perm |= Perm.WRITE;
+    if ((prot & PROT_EXEC) != 0)
+        perm |= Perm.EXEC;
+    return perm;
+}
+
 struct VmArea {
     int prot;
     int flags;

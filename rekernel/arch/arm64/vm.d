@@ -82,7 +82,7 @@ private uintptr vpn(uint level, uintptr va) {
 }
 
 struct Pagetable {
-    enum {
+    enum : uint {
         LEVEL_512G = 3,
         LEVEL_1G = 2,
         LEVEL_2M = 1,

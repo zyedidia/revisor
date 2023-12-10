@@ -1,6 +1,7 @@
 module trap;
 
 import arch.sys;
+import arch.vm;
 
 import core.lib;
 import core.interval;
@@ -24,12 +25,17 @@ enum Fault {
 
 private bool mmap_fault(Proc* p, uintptr ptr, VmArea vma) {
     uintptr start = truncpg(ptr);
+
+    uint lvl = Pagetable.LEVEL_4K;
+    Pte* pte = p.pt.walk(start, lvl);
+    if (pte && pte.valid)
+        return false; // already mapped
+
     void* pg = kallocpage();
     if (!pg)
         return false;
     // TODO: prot
-    printf("map %lx -> %lx\n", start, ka2pa(pg));
-    if (!p.pt.map_region(start, ka2pa(pg), PAGESIZE, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER)) {
+    if (!p.pt.map_region(start, ka2pa(pg), PAGESIZE, prot2perm(vma.prot) | Perm.USER)) {
         kfree(pg);
         return false;
     }
@@ -44,5 +50,6 @@ void pagefault(Proc* p, uintptr ptr, Fault type) {
         }
     }
 
+    printf("%d: killed\n", p.pid);
     sys_exit(p, 1);
 }
