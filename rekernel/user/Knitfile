@@ -1,7 +1,7 @@
 return b{
-    $ all:VB: hello.elf test.elf
-    $ hello.elf: hello.c
-        gcc $input -o $output -static
-    $ test.elf: test.S
+    $ all:VB: hello.elf test.elf alloc.elf
+    $ %.elf: %.c
+        gcc -O2 $input -o $output -static
+    $ %.elf: %.S
         gcc -nostdlib $input -o $output -static
 }

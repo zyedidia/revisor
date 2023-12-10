@@ -10,8 +10,10 @@ import core.math;
 import proc;
 import trap;
 import vm;
+import schedule;
 
 enum Sys {
+    FCNTL = 25,
     IOCTL = 29,
     WRITE = 64,
     WRITEV = 66,
@@ -33,6 +35,8 @@ enum Sys {
     GETEGID = 177,
     GETTID = 178,
     BRK = 214,
+    MUNMAP = 215,
+    MREMAP = 216,
     MMAP = 222,
     MPROTECT = 226,
     PRLIMIT64 = 261,
@@ -84,7 +88,10 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         // TODO: mprotect
         ret = 0;
         break;
-    case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64:
+    case Sys.MREMAP:
+        ret = Err.NOSYS;
+        break;
+    case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64, Sys.FCNTL:
         // ignored
         ret = 0;
         break;
@@ -173,7 +180,11 @@ uintptr sys_brk(Proc* p, uintptr addr) {
 
 noreturn sys_exit(Proc* p, int status) {
     printf("%d: exited\n", p.pid);
-    exit(0);
+
+    p.block(&exitq, Proc.State.EXITED);
+
+    // should not return
+    assert(0);
 }
 
 enum {

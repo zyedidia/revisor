@@ -11,6 +11,8 @@ import core.math;
 
 import elf;
 import vm;
+import schedule;
+import queue;
 
 private enum {
     KSTACK_SIZE = 4 * PAGESIZE,
@@ -19,6 +21,12 @@ private enum {
 }
 
 struct Proc {
+    enum State {
+        RUNNABLE = 0,
+        BLOCKED = 1,
+        EXITED = 2,
+    }
+
     Trapframe trapframe;
     Context context;
 
@@ -26,6 +34,11 @@ struct Proc {
 
     int pid;
     uintptr brk;
+
+    Proc* next;
+    Proc* prev;
+    State state;
+    void* wq;
 
     align(16) ubyte[KSTACK_SIZE] kstack;
     static assert(kstack.length % 16 == 0);
@@ -180,6 +193,19 @@ err:
         *av++ = Auxv(AT_EGID, 1000);
         *av++ = Auxv(AT_NULL, 0);
 
+        state = State.RUNNABLE;
+
         return true;
+    }
+
+    void yield() {
+        kswitch(null, &context, &scheduler);
+    }
+
+    void block(Queue* q, State s) {
+        state = s;
+        wq = q;
+        q.push_front(&this);
+        yield();
     }
 }

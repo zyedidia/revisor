@@ -3,6 +3,7 @@ module main;
 import arch.regs;
 
 import proc;
+import schedule : schedule, runq, main;
 
 __gshared Context old;
 
@@ -22,5 +23,8 @@ extern (C) void kmain(int argc, char** argv) {
         return;
     }
 
-    kswitch(p, &old, &p.context);
+    main = p;
+    runq.push_front(p);
+
+    schedule();
 }
