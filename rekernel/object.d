@@ -23,3 +23,5 @@ pragma(printf)
 extern (C) void panicf(const char* fmt, ...);
 
 enum PAGESIZE = 4096;
+
+struct Empty {}

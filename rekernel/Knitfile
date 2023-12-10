@@ -21,7 +21,8 @@ local dsrc = knit.join(
 )
 
 local csrc = knit.join(
-    knit.glob("tinyprintf/*.c")
+    knit.glob("tinyprintf/*.c"),
+    knit.glob("buddy/*.c")
 )
 
 local ssrc = knit.join(

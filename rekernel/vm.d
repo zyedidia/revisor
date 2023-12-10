@@ -38,3 +38,8 @@ VmMap vm_lookup(Pagetable* pt, uintptr va) {
         ptesz - (va - va_align),
     );
 }
+
+struct VmArea {
+    int prot;
+    int flags;
+}

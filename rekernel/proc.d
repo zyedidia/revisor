@@ -8,16 +8,20 @@ import arch.sys;
 import core.alloc;
 import core.lib;
 import core.math;
+import core.interval;
 
 import elf;
 import vm;
 import schedule;
 import queue;
+import sys;
 
 private enum {
-    KSTACK_SIZE = 4 * PAGESIZE,
-    USTACK_SIZE = 8 * PAGESIZE,
-    ulong USTACK_VA = 0x7fff0000,
+    usize KSTACK_SIZE  = 4 * PAGESIZE,
+    usize USTACK_SIZE  = 8 * PAGESIZE,
+    uintptr USTACK_VA  = 0x0000_7fff_0000,
+    uintptr MMAP_START = 0x0001_0000_0000,
+    usize MMAP_SIZE    = gb(512),
 }
 
 struct Proc {
@@ -34,6 +38,9 @@ struct Proc {
 
     int pid;
     uintptr brk;
+
+    IntervalTree!(VmArea) vmas;
+    IntervalTree!(Empty) free_vmas;
 
     Proc* next;
     Proc* prev;
@@ -70,6 +77,10 @@ struct Proc {
         p.pid = 0;
         p.pt = pt;
         p.context = Context(cast(uintptr) &Proc.entry, p.kstackp());
+        if (!p.free_vmas.add(MMAP_START, MMAP_SIZE, Empty())) {
+            kfree(p);
+            return null;
+        }
 
         return p;
     }
@@ -207,5 +218,63 @@ err:
         wq = q;
         q.push_front(&this);
         yield();
+    }
+
+    bool map_vma_any(usize size, int prot, int flags, ref uintptr addr) {
+        Interval!(Empty) i;
+        // Find a region that is large enough.
+        if (!free_vmas.find(size, i)) {
+            return false;
+        }
+
+        addr = i.start;
+
+        return map_vma(i.start, size, prot, flags);
+    }
+
+    bool map_vma(uintptr start, usize size, int prot, int flags) {
+        if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE)
+            return false;
+
+        // Cannot overlap any existing intervals.
+        Interval!(VmArea) v;
+        if (vmas.overlaps(start, size, v)) {
+            return false;
+        }
+
+        // Otherwise good to add.
+        if (!vmas.add(start, size, VmArea(prot, flags))) {
+            return false;
+        }
+
+        Interval!(Empty) i;
+        free_vmas.overlaps(start, size, i);
+
+        // Split the free region.
+        bool ok = free_vmas.remove(i.start, i.size);
+        assert(ok);
+        // This needs to be atomic with the remove.
+        if (start - i.start != 0) {
+            ok = free_vmas.add(i.start, start - i.start, Empty());
+            assert(ok);
+        }
+        if (i.size - size != 0) {
+            if (!free_vmas.add(start + size, i.size - (start - i.start) - size, Empty())) {
+                // If this fails, we might have problems.
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool unmap_vma(uintptr start, usize size) {
+        if (!vmas.remove(start, size)) {
+            return false;
+        }
+        if (!free_vmas.add(start, size, Empty())) {
+            return false;
+        }
+        return true;
     }
 }

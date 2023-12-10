@@ -2,8 +2,8 @@ module main;
 
 import arch.regs;
 
-import proc;
 import schedule : schedule, runq, main;
+import proc;
 
 __gshared Context old;
 

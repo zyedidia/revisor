@@ -9,7 +9,10 @@ int main() {
 
     // large allocations
     for (int i = 0; i < 10; i++) {
-        int* p = malloc(1024 * 1024);
+        volatile int* p = malloc(1024 * 1024);
+        for (int j = 0; j < 8192; j++) {
+            p[j] = j;
+        }
         printf("allocated: %p\n", p);
     }
     return 0;

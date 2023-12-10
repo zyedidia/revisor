@@ -32,6 +32,10 @@ extern (C) {
             Regs* r = &p.trapframe.regs;
             r.x0 = syscall_handler(p, r.x8, r.x0, r.x1, r.x2, r.x3, r.x4, r.x5);
             break;
+        case Exception.DATA_ABORT_LOWER:
+            ubyte dir = SysReg.esr_el1 & 1;
+            pagefault(p, SysReg.far_el1, dir == 1 ? Fault.WRITE : Fault.READ);
+            break;
         default:
             printf("[unhandled user exception]: esr: 0x%lx, elr: 0x%lx, far: 0x%lx\n", exc_class, SysReg.elr_el1, SysReg.far_el1);
             unhandled(p);

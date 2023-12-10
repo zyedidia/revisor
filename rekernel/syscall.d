@@ -91,6 +91,12 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.MREMAP:
         ret = Err.NOSYS;
         break;
+    case Sys.MMAP:
+        ret = sys_mmap(p, a0, a1, cast(int) a2, cast(int) a3, cast(int) a4, cast(long) a5);
+        break;
+    case Sys.MUNMAP:
+        ret = sys_munmap(p, a0, a1);
+        break;
     case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64, Sys.FCNTL:
         // ignored
         ret = 0;
@@ -209,11 +215,41 @@ int sys_uname(Proc* p, Utsname* buf) {
         data[$-1] = '\0';
     }
 
-    char* info = cast(char*) USER_END - PAGESIZE;
     addstring(buf.sysname, "Linux");
     buf.nodename = null;
     addstring(buf.release, "6.0.0-revisor");
     buf.version_ = null;
     buf.machine = null;
+    return 0;
+}
+
+uintptr sys_mmap(Proc* p, uintptr addr, usize length, int prot, int flags, int fd, long offset) {
+    assert(fd == -1);
+    assert(offset == 0);
+
+    addr = truncpg(addr);
+    length = ceilpg(length);
+
+    if (addr == 0) {
+        if (!p.map_vma_any(length, prot, flags, addr)) {
+            return Err.NOMEM;
+        }
+    } else {
+        if (!p.map_vma(addr, length, prot, flags)) {
+            return Err.NOMEM;
+        }
+    }
+
+    return addr;
+}
+
+int sys_munmap(Proc* p, uintptr addr, usize length) {
+    addr = truncpg(addr);
+    length = ceilpg(length);
+
+    if (!p.unmap_vma(addr, length)) {
+        return Err.NOMEM;
+    }
+
     return 0;
 }
