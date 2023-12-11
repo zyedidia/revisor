@@ -305,7 +305,18 @@ err:
         if (!free_vmas.add(start, size, Empty())) {
             return false;
         }
-        // TODO: actually unmap and free the pages
+        // TODO: handle unmapping with lazy mapping (need to free pages individually)
+        uint lvl;
+        Pte* pte = pt.walk(start, lvl);
+        if (pte && pte.valid)
+            kfree(cast(void*) pa2ka(pte.pa()));
+        for (usize i = 0; i < size; i += PAGESIZE) {
+            pte = pt.walk(start + i, lvl);
+            if (!pte || !pte.valid) {
+                continue;
+            }
+            pte.valid = 0;
+        }
         return true;
     }
 }
