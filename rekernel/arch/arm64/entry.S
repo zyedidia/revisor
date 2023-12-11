@@ -47,7 +47,8 @@ l0pt:
 l1pt:
 	.quad 0x00000705
 	.quad 0x40000701
-	.fill 510,8,0
+	.quad 0x80000701
+	.fill 509,8,0
 
 .text
 

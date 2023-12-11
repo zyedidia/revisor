@@ -19,7 +19,7 @@ import file;
 
 private enum {
     usize KSTACK_SIZE  = 4 * PAGESIZE,
-    usize USTACK_SIZE  = 8 * PAGESIZE,
+    usize USTACK_SIZE  = 16 * PAGESIZE,
     uintptr USTACK_VA  = 0x0000_7fff_0000,
     uintptr MMAP_START = 0x0001_0000_0000,
     usize MMAP_SIZE    = gb(512),
@@ -62,6 +62,7 @@ struct Proc {
     }
 
     static void entry(Proc* p) {
+        wrpt(p.pt);
         usertrapret(p);
     }
 
@@ -290,6 +291,10 @@ err:
             }
         }
 
+        ubyte[] mem = kalloc(size);
+        assert(mem);
+        ensure(pt.map_region(start, ka2pa(mem.ptr), mem.length, Perm.READ | Perm.WRITE | Perm.USER));
+
         return true;
     }
 
@@ -300,6 +305,7 @@ err:
         if (!free_vmas.add(start, size, Empty())) {
             return false;
         }
+        // TODO: actually unmap and free the pages
         return true;
     }
 }

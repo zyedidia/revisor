@@ -77,7 +77,8 @@ init_pdp_upper:
 init_pdp:
 	.quad 0x0000000000000083 // 0GB - 1GB, PS, RW, P
 	.quad 0x0000000040000083 // 1GB - 2GB, PS, RW, P
-	.fill 510,8,0
+	.quad 0x0000000080000083 // 2GB - 3GB, PS, RW, P
+	.fill 509,8,0
 
 .text
 

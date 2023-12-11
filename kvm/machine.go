@@ -294,3 +294,7 @@ func show(indent string, l ...interface{}) string {
 
 	return ret
 }
+
+func (m *Machine) GetPc(cpu int) uint64 {
+	return m.vm.vcpus[cpu].GetPc()
+}

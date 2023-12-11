@@ -215,3 +215,8 @@ func (vcpu *vcpu) SetSRegs2(sreg *SRegs2) error {
 
 	return err
 }
+
+func (vcpu *vcpu) GetPc() uint64 {
+	r, _ := vcpu.GetRegs()
+	return r.Rip
+}

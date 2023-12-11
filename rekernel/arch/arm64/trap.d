@@ -66,7 +66,7 @@ noreturn usertrapret(Proc* p) {
     SysReg.elr_el1 = p.trapframe.epc;
     SysReg.tpidr_el1 = cast(uintptr) p;
 
-    wrpt(p.pt);
+    vm_fence();
 
     userret(p);
 }

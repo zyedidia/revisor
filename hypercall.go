@@ -122,7 +122,7 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 	case hypExit:
 		return 0, ErrExit
 	}
-	return 0, fmt.Errorf("%w: %d", ErrUnknownHypercall, num)
+	return 0, fmt.Errorf("%w: %d (pc=%x)", ErrUnknownHypercall, num, m.GetPc(cpu))
 }
 
 func cstring(data []byte) string {

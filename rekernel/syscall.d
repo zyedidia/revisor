@@ -77,6 +77,8 @@ private bool checkstr(Proc* p, uintptr str) {
 uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulong a3, ulong a4, ulong a5) {
     uintptr ret;
 
+    // printf("syscall: %ld\n", sysno);
+
     switch (sysno) {
     case Sys.GETPID:
         ret = sys_getpid(p);
@@ -132,6 +134,8 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         printf("[warning]: unknown syscall: %ld\n", sysno);
         ret = Err.NOSYS;
     }
+
+    // printf("ret = %lx\n", ret);
 
     return ret;
 }

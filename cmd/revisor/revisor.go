@@ -24,7 +24,7 @@ func main() {
 	}
 
 	c := revisor.NewContainer()
-	m, err := kvm.NewMachine("/dev/kvm", 1, gb(1), c)
+	m, err := kvm.NewMachine("/dev/kvm", 1, gb(2), c)
 	if err != nil {
 		log.Fatal(err)
 	}
