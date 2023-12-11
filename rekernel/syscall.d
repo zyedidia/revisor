@@ -11,11 +11,17 @@ import proc;
 import trap;
 import vm;
 import schedule;
+import file;
 
 enum Sys {
     FCNTL = 25,
     IOCTL = 29,
+    OPENAT = 56,
+    CLOSE = 57,
+    LSEEK = 62,
+    READ = 63,
     WRITE = 64,
+    READV = 65,
     WRITEV = 66,
     READLINKAT = 78,
     NEWFSTATAT = 79,
@@ -47,9 +53,11 @@ enum Sys {
 
 enum Err {
     PERM = -1,
+    NOENT = 2,
     BADF = -9,
     NOMEM = -12,
     FAULT = -14,
+    NFILE = -23,
     NOSYS = -38,
 }
 
@@ -59,6 +67,11 @@ private bool checkptr(Proc* p, uintptr ptr, usize size) {
         return false;
     }
     return true;
+}
+
+private bool checkstr(Proc* p, uintptr str) {
+    // TODO: improve
+    return checkptr(p, str, 1);
 }
 
 uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulong a3, ulong a4, ulong a5) {
@@ -71,11 +84,23 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.BRK:
         ret = sys_brk(p, a0);
         break;
+    case Sys.LSEEK:
+        ret = sys_lseek(p, cast(int) a0, a1, cast(int) a2);
+        break;
+    case Sys.READ:
+        ret = sys_read(p, cast(int) a0, a1, a2);
+        break;
     case Sys.WRITE:
         ret = sys_write(p, cast(int) a0, a1, a2);
         break;
     case Sys.WRITEV:
         ret = sys_writev(p, a0, a1, a2);
+        break;
+    case Sys.OPENAT:
+        ret = sys_openat(p, cast(int) a0, a1, cast(int) a2, cast(int) a3);
+        break;
+    case Sys.CLOSE:
+        ret = sys_close(p, cast(int) a0);
         break;
     case Sys.UNAME:
         ret = sys_uname(p, cast(Utsname*) a0);
@@ -115,16 +140,77 @@ int sys_getpid(Proc* p) {
     return p.pid;
 }
 
+int sys_openat(Proc* p, int dirfd, uintptr pathname, int flags, int mode) {
+    if (dirfd != AT_FDCWD) {
+        return Err.BADF;
+    }
+    if (!checkstr(p, pathname)) {
+        return Err.FAULT;
+    }
+    int fd;
+    VFile* vf = p.fdtable.alloc(fd);
+    if (!vf) {
+        return Err.NFILE;
+    }
+    int err = file_new(vf, cast(char*) pathname, flags, mode);
+    if (err < 0) {
+        p.fdtable.remove(fd);
+        return err;
+    }
+    return fd;
+}
+
+int sys_close(Proc* p, int fd) {
+    // TODO: file refcount
+    if (!p.fdtable.remove(fd)) {
+        return Err.BADF;
+    }
+    return 0;
+}
+
+ssize sys_lseek(Proc* p, int fd, ssize off, int whence) {
+    VFile file;
+    if (!p.fdtable.get(fd, file))
+        return Err.BADF;
+    if (!file.lseek)
+        return Err.PERM;
+    return file.lseek(file.dev, p, off, whence);
+}
+
 struct Iovec {
     uintptr base;
     usize len;
 }
 
-ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
-    int fd = cast(int) a0;
-    if (fd != 1 && fd != 2) {
+ssize sys_read(Proc* p, int fd, uintptr buf, usize size) {
+    VFile file;
+    if (!p.fdtable.get(fd, file)) {
         return Err.BADF;
     }
+    if (file.read == null) {
+        return Err.PERM;
+    }
+    if (!checkptr(p, buf, size)) {
+        return Err.FAULT;
+    }
+    ssize i = 0;
+    while (size > 0) {
+        VmMap map = vm_lookup(p.pt, buf + i);
+        if ((map.perm & Perm.WRITE) == 0) {
+            return Err.FAULT;
+        }
+        ssize n = file.read(file.dev, p, cast(ubyte*) map.ka, min(size, map.size));
+        i += n;
+        if (n < min(size, map.size)) {
+            break;
+        }
+        size -= n;
+    }
+    return i;
+}
+
+ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
+    int fd = cast(int) a0;
     uintptr iovp = a1;
     usize iovcnt = a2;
     if (!checkptr(p, iovp, iovcnt * Iovec.sizeof)) {
@@ -134,27 +220,38 @@ ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
     ssize total = 0;
     // TODO: additional checks on iov
     for (int i = 0; i < iov.length; i++) {
-        total += sys_write(p, fd, iov[i].base, iov[i].len);
+        ssize n = sys_write(p, fd, iov[i].base, iov[i].len);
+        if (n < 0) {
+            return n;
+        }
+        total += n;
     }
     return total;
 }
 
 ssize sys_write(Proc* p, int fd, uintptr buf, usize size) {
-    if (fd != 1 && fd != 2) {
+    VFile file;
+    if (!p.fdtable.get(fd, file)) {
         return Err.BADF;
+    }
+    if (file.write == null) {
+        return Err.PERM;
     }
     if (!checkptr(p, buf, size)) {
         return Err.FAULT;
     }
     ssize i = 0;
-    while (size) {
+    while (size > 0) {
         VmMap map = vm_lookup(p.pt, buf + i);
         if ((map.perm & Perm.READ) == 0) {
             return Err.FAULT;
         }
-        ssize n = write(fd, cast(void*) map.ka, min(size, map.size));
-        size -= n;
+        ssize n = file.write(file.dev, p, cast(ubyte*) map.ka, min(size, map.size));
         i += n;
+        if (n < min(size, map.size)) {
+            break;
+        }
+        size -= n;
     }
     return i;
 }

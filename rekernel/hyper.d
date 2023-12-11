@@ -1,5 +1,8 @@
 module hyper;
 
+import core.alloc;
+import core.lib;
+
 extern (C) extern uintptr _hypercall(uintptr a0, uintptr a1, uintptr a2, uintptr sysno);
 
 uintptr hypercall(uintptr sysno, uintptr a0 = 0, uintptr a1 = 0, uintptr a2 = 0) {
@@ -34,7 +37,12 @@ void* sbrk(usize incr) {
 }
 
 int open(const char* name, int flags, int mode) {
-    return cast(int) hypercall(Hyper.OPEN, cast(uintptr) name, flags, mode);
+    ubyte[] buf = kalloc(strlen(name) + 1);
+    if (!buf)
+        return -1;
+    scope(exit) kfree(buf);
+    memcpy(buf.ptr, name, buf.length);
+    return cast(int) hypercall(Hyper.OPEN, cast(uintptr) buf.ptr, flags, mode);
 }
 
 int close(int file) {
@@ -50,11 +58,22 @@ long lseek64(int file, long off, int whence) {
 }
 
 int write(int file, char* ptr, int len) {
-    return cast(int) hypercall(Hyper.WRITE, file, cast(uintptr) ptr, len);
+    ubyte[] buf = kalloc(len);
+    if (!buf)
+        return -1;
+    scope(exit) kfree(buf);
+    memcpy(buf.ptr, ptr, len);
+    return cast(int) hypercall(Hyper.WRITE, file, cast(uintptr) buf.ptr, len);
 }
 
 int read(int file, char* ptr, int len) {
-    return cast(int) hypercall(Hyper.READ, file, cast(uintptr) ptr, len);
+    ubyte[] buf = kalloc(len);
+    if (!buf)
+        return -1;
+    scope(exit) kfree(buf);
+    int ret = cast(int) hypercall(Hyper.READ, file, cast(uintptr) buf.ptr, len);
+    memcpy(ptr, buf.ptr, len);
+    return ret;
 }
 
 noreturn _exit(int status) {

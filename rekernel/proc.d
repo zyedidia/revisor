@@ -15,6 +15,7 @@ import vm;
 import schedule;
 import queue;
 import sys;
+import file;
 
 private enum {
     usize KSTACK_SIZE  = 4 * PAGESIZE,
@@ -42,6 +43,8 @@ struct Proc {
 
     IntervalTree!(VmArea) vmas;
     IntervalTree!(Empty) free_vmas;
+
+    FdTable fdtable;
 
     Proc* next;
     Proc* prev;
@@ -82,6 +85,7 @@ struct Proc {
             kfree(p);
             return null;
         }
+        p.fdtable.init();
 
         return p;
     }

@@ -19,12 +19,17 @@ ssize write(int fd, void* buf, usize count);
 ssize lseek(int fd, ssize offset, int whence);
 int close(int fd);
 
+void* fdopen(int fd, const(char)* mode);
+usize fread(const void* ptr, usize size, usize nmemb, void* stream);
 usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
+int fseek(void* stream, ssize off, uint whence);
+int fclose(void* stream);
 
 extern (C) __gshared {
     extern void* stdout;
     extern void* stderr;
     extern void* stdin;
+    extern int errno;
 }
 
 noreturn exit(int status);
@@ -35,4 +40,9 @@ enum {
     SEEK_END = 2,
 
     O_RDONLY = 0,
+    O_WRONLY = 1,
+    O_RDWR   = 2,
+    O_APPEND = 0x0400,
+    O_TRUNC  = 0x0200,
+    O_CREAT  = 0x0040,
 }

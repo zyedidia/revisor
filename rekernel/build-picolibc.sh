@@ -17,6 +17,7 @@ meson \
     -Dlibdir=lib \
     -Dformat-default=long-long \
     -Dthread-local-storage=false \
+    -Datomic-ungetc=false \
     -Dspecsdir=none \
     ../picolibc
 ninja
