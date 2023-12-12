@@ -62,7 +62,6 @@ struct Proc {
     }
 
     static void entry(Proc* p) {
-        Pagetable* pt = cast(Pagetable*) rd_cr3();
         wrpt(p.pt);
         usertrapret(p);
     }

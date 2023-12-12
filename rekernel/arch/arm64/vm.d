@@ -192,3 +192,6 @@ void wrpt(Pagetable* pt) {
     SysReg.ttbr0_el1 = ka2pa(cast(uintptr) pt);
     vm_fence();
 }
+
+// not necessary for arm64 because of ttbr1_el1
+void kernel_map(Pagetable* pt) {}
