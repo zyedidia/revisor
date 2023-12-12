@@ -3,6 +3,7 @@ module syscall;
 import arch.vm;
 import arch.sys;
 import arch.syscall;
+import arch.types;
 
 import core.alloc;
 import core.lib;
@@ -336,11 +337,6 @@ int sys_munmap(Proc* p, uintptr addr, usize length) {
     return 0;
 }
 
-struct TimeSpec {
-    ulong sec;
-    ulong nsec;
-}
-
 enum {
     CLOCK_REALTIME  = 0,
     CLOCK_MONOTONIC = 1,
@@ -362,5 +358,31 @@ int sys_clock_gettime(Proc* p, ulong clockid, uintptr tp) {
 }
 
 int sys_fstatat(Proc* p, int dirfd, uintptr pathname, uintptr statbuf, int flags) {
+    if (!checkptr(p, statbuf, statbuf.sizeof))
+        return Err.FAULT;
+    if (!checkstr(p, pathname))
+        return Err.FAULT;
+    VFile file;
+    if (!p.fdtable.get(dirfd, file))
+        return Err.BADF;
+    if (!file.stat)
+        return Err.BADF;
+    char* path = cast(char*) pathname;
+    Stat* stat = cast(Stat*) statbuf;
+    if ((flags & AT_EMPTY_PATH) == 0) {
+        // TODO: only supports AT_EMPTY_PATH
+        return Err.INVAL;
+    }
+    StatHyper stath;
+    if (file.stat(file.dev, p, &stath) < 0)
+        return Err.INVAL;
+    stat.st_mode = stath.mode;
+    stat.st_size = stath.size;
+    stat.st_uid = stath.uid;
+    stat.st_gid = stath.gid;
+    stat.st_dev = stath.dev;
+    stat.st_rdev = stath.rdev;
+    stat.st_ino = stath.ino;
+    stat.st_mtim = TimeSpec(stath.mtim_sec, stath.mtim_nsec);
     return 0;
 }

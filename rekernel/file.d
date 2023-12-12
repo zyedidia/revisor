@@ -7,6 +7,7 @@ import syscall;
 
 enum {
     AT_FDCWD = -100,
+    AT_EMPTY_PATH = 0x1000,
 }
 
 private immutable(char)* flags2cmode(int flags) {
@@ -26,12 +27,19 @@ int file_new(VFile* vf, char* name, int flags, int mode) {
     void* cfile = fdopen(kfd, flags2cmode(flags));
     if (!cfile)
         return Err.BADF;
-    vf.dev = cfile;
+    *vf = std_new(cfile);
+    return 0;
+}
+
+VFile std_new(void* stream) {
+    VFile vf;
+    vf.dev = stream;
     vf.read = &file_read;
     vf.write = &file_write;
     vf.lseek = &file_lseek;
+    vf.stat = &file_stat;
     vf.close = &file_close;
-    return 0;
+    return vf;
 }
 
 ssize file_read(void* dev, Proc* p, ubyte* buf, usize n) {
@@ -40,6 +48,10 @@ ssize file_read(void* dev, Proc* p, ubyte* buf, usize n) {
 
 ssize file_write(void* dev, Proc* p, ubyte* buf, usize n) {
     return fwrite(buf, 1, n, dev);
+}
+
+int file_stat(void* dev, Proc* p, StatHyper* statbuf) {
+    return fstat(fileno(dev), statbuf);
 }
 
 ssize file_lseek(void* dev, Proc* p, ssize off, uint whence) {
@@ -56,16 +68,7 @@ struct VFile {
     ssize function(void* dev, Proc* p, ubyte* buf, usize n) write;
     ssize function(void* dev, Proc* p, ssize off, uint whence) lseek;
     int function(void* dev, Proc* p) close;
-}
-
-private ssize rd_stdin(void* dev, Proc* p, ubyte* buf, usize n) {
-    return fread(buf, 1, n, stdin);
-}
-private ssize wr_stdout(void* dev, Proc* p, ubyte* buf, usize n) {
-    return fwrite(buf, 1, n, stdout);
-}
-private ssize wr_stderr(void* dev, Proc* p, ubyte* buf, usize n) {
-    return fwrite(buf, 1, n, stderr);
+    int function(void* dev, Proc* p, StatHyper* stat) stat;
 }
 
 struct FdTable {
@@ -96,27 +99,9 @@ struct FdTable {
     }
 
     void init() {
-        alloc(0, VFile(
-            null,      // dev
-            &rd_stdin, // read
-            null,      // write
-            null,      // lseek
-            null,      // close
-        ));
-        alloc(1, VFile(
-            null,       // dev
-            null,       // read
-            &wr_stdout, // write
-            null,       // lseek
-            null,       // close
-        ));
-        alloc(2, VFile(
-            null,       // dev
-            null,       // read
-            &wr_stderr, // write
-            null,       // lseek
-            null,       // close
-        ));
+        alloc(0, std_new(stdin));
+        alloc(1, std_new(stdout));
+        alloc(2, std_new(stderr));
     }
 
     bool get(int fd, ref VFile file) {

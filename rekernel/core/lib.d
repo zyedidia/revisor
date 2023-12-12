@@ -25,8 +25,23 @@ usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
 int fseek(void* stream, ssize off, uint whence);
 int fclose(void* stream);
 int fflush(void* stream);
+int fileno(void* stream);
 
 int time(ulong* sec, ulong* nsec);
+
+struct StatHyper {
+    usize size;
+    uint mode;
+    ulong mtim_sec;
+    ulong mtim_nsec;
+    ulong ino;
+    ulong dev;
+    uint uid;
+    uint gid;
+    ulong rdev;
+}
+
+int fstat(int file, StatHyper* st);
 
 extern (C) __gshared {
     extern void* stdout;

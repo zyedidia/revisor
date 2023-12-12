@@ -8,7 +8,9 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/zyedidia/revisor/kvm"
 )
@@ -21,6 +23,7 @@ const (
 	hypClose = 4
 	hypLseek = 5
 	hypTime  = 6
+	hypFstat = 7
 )
 
 const (
@@ -55,6 +58,18 @@ func (c *Container) addFile(f *os.File) (uint64, error) {
 	return fd, nil
 }
 
+type stat struct {
+	size      uint64
+	mode      uint32
+	mtim_sec  uint64
+	mtim_nsec uint64
+	dev       uint64
+	uid       uint32
+	gid       uint32
+	rdev      uint64
+	ino       uint64
+}
+
 var (
 	ErrExit             = errors.New("exited")
 	ErrUnknownHypercall = errors.New("unknown hypercall")
@@ -68,6 +83,33 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 		a1 := m.VtoP(cpu, a1)
 		binary.LittleEndian.PutUint64(m.Slice(a0, a0+8), uint64(now.Unix()))
 		binary.LittleEndian.PutUint64(m.Slice(a1, a1+8), uint64(now.Nanosecond()))
+		return 0, nil
+	case hypFstat:
+		fd := a0
+		ptr := m.VtoP(cpu, a1)
+		f, ok := c.fdtable[fd]
+		if !ok {
+			return errFail, nil
+		}
+		info, err := f.Stat()
+		if err != nil {
+			return errFail, nil
+		}
+		slice := m.Slice(ptr, ptr+uint64(unsafe.Sizeof(stat{})))
+		sys := info.Sys().(*syscall.Stat_t)
+		st := stat{
+			size:      uint64(info.Size()),
+			mode:      sys.Mode,
+			mtim_sec:  uint64(info.ModTime().Unix()),
+			mtim_nsec: uint64(info.ModTime().Nanosecond()),
+			dev:       sys.Dev,
+			uid:       sys.Uid,
+			gid:       sys.Gid,
+			rdev:      sys.Rdev,
+			ino:       sys.Ino,
+		}
+		stbuf := (*(*[unsafe.Sizeof(stat{})]byte)(unsafe.Pointer(&st)))[:]
+		copy(slice, stbuf)
 		return 0, nil
 	case hypWrite:
 		fd := a0
