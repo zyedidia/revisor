@@ -1,5 +1,10 @@
 module arch.amd64.syscall;
 
+import arch.amd64.sys;
+
+import syscall;
+import proc;
+
 enum Sys {
     FCNTL = 72,
     IOCTL = 16,
@@ -37,4 +42,22 @@ enum Sys {
     GETRANDOM = 318,
     RSEQ = 334,
     ARCH_PRCTL = 158,
+}
+
+enum {
+    ARCH_SET_FS = 0x1002,
+}
+
+int sys_arch_prctl(Proc* p, int code, ulong addr) {
+    switch (code) {
+    case ARCH_SET_FS:
+        if (!checkptr(p, addr, 1)) {
+            return Err.FAULT;
+        }
+        // p.trapframe.regs.fs = SEGSEL_APP_DATA;
+        wr_msr(MSR_IA32_FS_BASE, addr);
+        return 0;
+    default:
+        return Err.INVAL;
+    }
 }

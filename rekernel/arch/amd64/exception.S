@@ -108,7 +108,8 @@ userret:
 	popq %r13
 	popq %r14
 	popq %r15
-	popq %fs
+	addq $8, %rsp
+	// popq %fs
 	swapgs
 	popq %gs
 	addq $16, %rsp

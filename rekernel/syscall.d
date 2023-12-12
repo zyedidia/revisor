@@ -20,11 +20,12 @@ enum Err {
     BADF = -9,
     NOMEM = -12,
     FAULT = -14,
+    INVAL = -22,
     NFILE = -23,
     NOSYS = -38,
 }
 
-private bool checkptr(Proc* p, uintptr ptr, usize size) {
+bool checkptr(Proc* p, uintptr ptr, usize size) {
     // TODO: improve
     if (ptr >= USER_END) {
         return false;
@@ -32,7 +33,7 @@ private bool checkptr(Proc* p, uintptr ptr, usize size) {
     return true;
 }
 
-private bool checkstr(Proc* p, uintptr str) {
+bool checkstr(Proc* p, uintptr str) {
     // TODO: improve
     return checkptr(p, str, 1);
 }
@@ -93,6 +94,12 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         // ignored
         ret = 0;
         break;
+    version (amd64) {
+    // amd64-only syscalls
+    case Sys.ARCH_PRCTL:
+        ret = sys_arch_prctl(p, cast(int) a0, a1);
+        break;
+    }
     default:
         printf("[warning]: unknown syscall: %ld\n", sysno);
         ret = Err.NOSYS;

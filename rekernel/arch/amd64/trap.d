@@ -56,7 +56,7 @@ extern (C) {
     }
 
     void exception(Trapframe* tf) {
-        panicf("exception rip: %lx, intno: %ld, err: %ld, cr2: %lx\n", tf.epc, tf.intno, tf.err, rd_cr2());
+        panicf("exception rip: 0x%lx, intno: %ld, err: %ld, cr2: 0x%lx\n", tf.epc, tf.intno, tf.err, rd_cr2());
     }
 
     noreturn userret(Trapframe* tf);
