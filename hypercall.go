@@ -66,7 +66,7 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 		now := time.Now()
 		a0 := m.VtoP(cpu, a0)
 		a1 := m.VtoP(cpu, a1)
-		binary.LittleEndian.PutUint64(m.Slice(a0, a0+8), uint64(now.Second()))
+		binary.LittleEndian.PutUint64(m.Slice(a0, a0+8), uint64(now.Unix()))
 		binary.LittleEndian.PutUint64(m.Slice(a1, a1+8), uint64(now.Nanosecond()))
 		return 0, nil
 	case hypWrite:

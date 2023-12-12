@@ -24,6 +24,7 @@ usize fread(const void* ptr, usize size, usize nmemb, void* stream);
 usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
 int fseek(void* stream, ssize off, uint whence);
 int fclose(void* stream);
+int fflush(void* stream);
 
 int time(ulong* sec, ulong* nsec);
 

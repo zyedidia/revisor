@@ -351,5 +351,9 @@ int sys_clock_gettime(Proc* p, ulong clockid, uintptr tp) {
         return Err.INVAL;
     }
     TimeSpec* t = cast(TimeSpec*) tp;
-    return time(&t.sec, &t.nsec);
+    ulong sec, nsec;
+    int ret = time(&sec, &nsec);
+    t.sec = sec;
+    t.nsec = nsec;
+    return ret;
 }
