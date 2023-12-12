@@ -45,8 +45,8 @@ local platform = {
 }
 
 local dflags = {
-    gdc := -O2 -I$picolib/include -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -fversion=$arch -ftransition=tls -mgeneral-regs-only -ffunction-sections -fdata-sections -fno-pic
-    ldc2 := -O2 -I$picolib/include -betterC -d-version=$arch $(platform[arch]) -function-sections -data-sections -relocation-model=static
+    gdc := -O2 -I$picolib/include -Wall -nophoboslib -fno-exceptions -fno-moduleinfo -fno-rtti -fversion=$arch -ftransition=tls -mgeneral-regs-only -ffunction-sections -fdata-sections -fno-pic -g
+    ldc2 := -O2 -I$picolib/include -betterC -d-version=$arch $(platform[arch]) -function-sections -data-sections -relocation-model=static -g
 }
 
 local flags = {

@@ -62,6 +62,7 @@ struct Proc {
     }
 
     static void entry(Proc* p) {
+        Pagetable* pt = cast(Pagetable*) rd_cr3();
         wrpt(p.pt);
         usertrapret(p);
     }
@@ -70,7 +71,7 @@ struct Proc {
         Pagetable* pt = knew!(Pagetable)();
         if (!pt)
             return null;
-        // TODO: kernel_procmap
+        kernel_map(pt);
 
         Proc* p = knew!(Proc)();
         if (!p) {
@@ -158,7 +159,10 @@ err:
         }
 
         trapframe.epc = ehdr.entry;
+        trapframe.setup();
         kfree(phdr);
+
+        state = State.RUNNABLE;
 
         return true;
 err:
@@ -201,7 +205,7 @@ err:
         p_argv = cast(char*) stack_top - 2 * PAGESIZE;
         p_uargv = ustack_top - 2 * PAGESIZE;
 
-        trapframe.regs.sp = p_uargv;
+        trapframe.user_sp = p_uargv;
 
         long* p_argc = cast(long*) p_argv;
         *p_argc++ = argc;
@@ -229,8 +233,6 @@ err:
         *av++ = Auxv(AT_GID, 1000);
         *av++ = Auxv(AT_EGID, 1000);
         *av++ = Auxv(AT_NULL, 0);
-
-        state = State.RUNNABLE;
 
         return true;
     }

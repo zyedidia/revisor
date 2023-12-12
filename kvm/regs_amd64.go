@@ -15,7 +15,7 @@ func (vcpu *vcpu) initRegs(rip, argc, argv, memsz uint64) error {
 	regs.Rip = rip
 	regs.Rdi = memsz
 	regs.Rsi = argc
-	regs.Rdx = argv
+	regs.R15 = argv
 
 	if err := vcpu.SetRegs(regs); err != nil {
 		return err

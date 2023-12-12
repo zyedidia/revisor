@@ -22,10 +22,15 @@ struct Regs {
 
 struct Context {
     ulong rsp;
+    ulong r15;
+    ulong r14;
+    ulong r13;
+    ulong r12;
     ulong rbx;
     ulong rbp;
-    ulong r12;
-    ulong r13;
-    ulong r14;
-    ulong r15;
+
+    this(uintptr lr, uintptr sp) {
+        this.rsp = sp - 16;
+        *(cast(ulong*) this.rsp) = lr;
+    }
 }

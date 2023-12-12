@@ -4,14 +4,6 @@ import arch.amd64.sys;
 
 import core.lib;
 
-enum {
-    SEGSEL_KERN_CODE = 0x8,
-    SEGSEL_APP_CODE  = 0x10,
-    SEGSEL_KERN_DATA = 0x18,
-    SEGSEL_APP_DATA  = 0x20,
-    SEGSEL_TASKSTATE = 0x28,
-}
-
 private __gshared {
     ulong[7] segments;
     GateDescriptor[256] interrupt_descriptors;

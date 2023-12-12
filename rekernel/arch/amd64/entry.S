@@ -67,12 +67,14 @@ init_pml4:
 	.fill 254,8,0
 	.quad init_pdp_upper + 3 // [0xffffffff80000000 - 0xffffffffffffffff)
 
+.globl init_pdp_upper
 .align 0x1000
 init_pdp_upper:
 	.fill 510,8,0
 	.quad 0x0000000000000083 // 0GB - 1GB, PS, RW, P
 	.quad 0x0000000040000083 // 1GB - 2GB, PS, RW, P
 
+.globl init_pdp
 .align 0x1000
 init_pdp:
 	.quad 0x0000000000000083 // 0GB - 1GB, PS, RW, P
@@ -86,9 +88,15 @@ init_pdp:
 boot64_high:
 	mov $init_stack_end, %rsp
 
-	/* go to our C entry point */
+	// save rsi and rdx (argc and argv)
+	movq %rsi, %r14
+
 	call kinit
 	call __libc_init_array
+
+	movq %r14, %rdi
+	movq %r15, %rsi
+
 	call kmain
 	call __libc_fini_array
 	call exit
@@ -96,6 +104,8 @@ boot64_high:
 boot64_hang:
 	hlt
 	jmp boot64_hang
+
+.data
 
 .section ".stack"
 

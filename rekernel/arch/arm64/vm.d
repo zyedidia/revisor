@@ -91,12 +91,12 @@ struct Pagetable {
         LEVEL_MAX = 3,
     }
 
-    align(4096) Pte[512] ptes;
+    align(PAGESIZE) Pte[512] ptes;
 
     Pte* walk(uintptr va, ref uint endlevel, Pagetable* function() ptalloc) {
         Pagetable* pt = &this;
 
-        for (uint level = LEVEL_MAX; level > endlevel; level--) {
+        for (int level = LEVEL_MAX; level > endlevel; level--) {
             Pte* pte = &pt.ptes[vpn(level, va)];
             if (pte.valid && pte.leaf(level)) {
                 endlevel = level;

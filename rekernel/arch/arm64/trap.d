@@ -54,6 +54,16 @@ struct Trapframe {
     uintptr epc;  // program counter to return to after the trap
     uintptr tp;   // thread pointer
     Regs regs;
+
+    void user_sp(uintptr val) {
+        regs.sp = val;
+    }
+
+    uintptr user_sp() {
+        return regs.sp;
+    }
+
+    void setup() {}
 }
 
 extern (C) noreturn userret(Proc* p);

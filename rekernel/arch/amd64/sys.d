@@ -3,6 +3,8 @@ module arch.amd64.sys;
 enum {
     KERNEL_START = 0xffff_8000_0000_0000,
     KTEXT_START = 0xffff_ffff_8000_0000,
+
+    USER_END = 0x0000_8000_0000_0000,
 }
 
 pragma(inline, true)
@@ -23,7 +25,7 @@ uintptr pa2ka(uintptr pa) {
 pragma(inline, true)
 void vm_fence() {
     asm {
-        "invlpg";
+        "invlpg 0";
     }
 }
 
@@ -96,6 +98,12 @@ uint rd_cr0() {
 }
 
 enum {
+    SEGSEL_KERN_CODE = 0x8,
+    SEGSEL_APP_CODE  = 0x10,
+    SEGSEL_KERN_DATA = 0x18,
+    SEGSEL_APP_DATA  = 0x20,
+    SEGSEL_TASKSTATE = 0x28,
+
     X86SEG_S = 1UL << 44,
     X86SEG_P = 1UL << 47,
     X86SEG_L = 1UL << 53,

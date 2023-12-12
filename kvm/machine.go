@@ -139,7 +139,6 @@ func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
 			if !errors.Is(err, ErrDebug) {
 				break
 			}
-			// addr := uint64(0xffff_ffff_8000_0000)
 			pc, s, err := m.Inst(cpu)
 			if err != nil {
 				fmt.Printf("disassembling after debug exit:%v\n", err)

@@ -3,7 +3,7 @@
 mkdir -p build
 cd build
 
-export CFLAGS="-mgeneral-regs-only"
+export CFLAGS="-mgeneral-regs-only -DBUFSIZ=8192"
 
 meson \
     -Dtls-model=local-exec \
