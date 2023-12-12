@@ -89,6 +89,15 @@ uintptr rd_cr3() {
 }
 
 pragma(inline, true)
+uintptr rd_cr2() {
+    uintptr val;
+    asm {
+        "movq %%cr2, %0" : "=r"(val);
+    }
+    return val;
+}
+
+pragma(inline, true)
 uint rd_cr0() {
     ulong val;
     asm {

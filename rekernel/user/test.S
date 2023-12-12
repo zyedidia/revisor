@@ -1,13 +1,13 @@
 .globl _start
 _start:
-	mov x8, 64
-	mov x0, 1
-	mrs x0, tpidr_el0
-	adr x1, hello
-	mov x2, 6
-	svc #0
-	mov x8, 93
-	svc #0
+	movq $1, %rax
+	movq $1, %rdi
+	leaq hello, %rsi
+	movq $6, %rdx
+	syscall
+
+	movq $60, %rax
+	syscall
 
 hello:
 	.asciz "hello\n"

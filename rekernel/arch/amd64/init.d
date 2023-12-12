@@ -4,10 +4,11 @@ import arch.amd64.sys;
 
 import core.lib;
 
+__gshared TaskState task_descriptor;
+
 private __gshared {
     ulong[7] segments;
     GateDescriptor[256] interrupt_descriptors;
-    TaskState task_descriptor;
 
     extern (C) {
         extern ubyte exception_stack_end;

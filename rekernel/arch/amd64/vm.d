@@ -20,7 +20,7 @@ enum {
 }
 
 private int pageindex(uintptr addr, int level) {
-    return cast(int) (addr >> (PAGEOFFBITS + (3 - level) * PAGEINDEXBITS)) & 0x1FF;
+    return cast(int) (addr >> (PAGEOFFBITS + (3 - level) * PAGEINDEXBITS)) & 0x1FFU;
 }
 
 struct Pte {
@@ -31,10 +31,11 @@ struct Pte {
     }
 
     bool leaf(uint level) {
-        return (level == 3 || (data & PTE_PS) != 0);
+        return level == Pagetable.LEVEL_4K || (data & PTE_PS) != 0;
     }
 
     void pa(uintptr pa) {
+        // TODO: setting this multiple times is bad
         data |= pa & ~0xFFFUL;
     }
 
@@ -50,6 +51,7 @@ struct Pte {
     }
 
     void perm(Perm perm) {
+        data &= ~(PTE_P | PTE_W | PTE_U);
         if (perm & Perm.READ)
             data |= PTE_P;
         if (perm & Perm.WRITE)
@@ -73,7 +75,7 @@ struct Pte {
 Pagetable* lookup_l4pagetable(Pagetable* pagetable, uintptr va, Perm perm, Pagetable* function() ptalloc) {
     Pagetable* pt = pagetable;
     for (int i = 0; i <= 2; i++) {
-        Pte pte = pt.ptes[pageindex(va, i)];
+        Pte* pte = &pt.ptes[pageindex(va, i)];
         if (!pte.valid) {
             // Allocate a new pagetable if required.
             if (!ptalloc) {
@@ -84,7 +86,6 @@ Pagetable* lookup_l4pagetable(Pagetable* pagetable, uintptr va, Perm perm, Paget
                 return null;
             pte.pa = ka2pa(cast(uintptr) new_pt);
             pte.perm = perm;
-            pt.ptes[pageindex(va, i)] = pte;
         }
         pt = cast(Pagetable*) pa2ka(pte.pa());
     }
@@ -107,10 +108,10 @@ struct Pagetable {
         Pagetable* pt = &this;
         Pte* pte;
         int i;
-        for (i = LEVEL_MAX; i > endlevel; i--) {
+        for (i = LEVEL_MAX; i >= endlevel; i--) {
             uint lvl = 3 - i;
             pte = &pt.ptes[pageindex(va, lvl)];
-            if (!pte.leaf(lvl)) {
+            if (!pte.valid || pte.leaf(i)) {
                 break;
             }
             pt = cast(Pagetable*) pa2ka(pte.pa());

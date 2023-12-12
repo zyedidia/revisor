@@ -4,6 +4,7 @@ import arch.vm;
 import arch.sys;
 
 enum Perm {
+    NONE = 0,
     READ  = 1 << 0,
     WRITE = 1 << 1,
     EXEC  = 1 << 2,
@@ -26,7 +27,7 @@ VmMap vm_lookup(Pagetable* pt, uintptr va) {
     uint level;
     Pte* pte = pt.walk(va, level);
     if (!pte || !pte.valid) {
-        return VmMap(false, 0, Perm(), 0);
+        return VmMap(false, 0, Perm.NONE, 0);
     }
     usize ptesz = Pagetable.lvl2size(level);
     uintptr va_align = va & ~(ptesz - 1);

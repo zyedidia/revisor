@@ -1,3 +1,9 @@
+#define SEGSEL_KERN_CODE 0x8
+#define SEGSEL_APP_CODE  0x10
+#define SEGSEL_KERN_DATA 0x18
+#define SEGSEL_APP_DATA  0x20
+#define SEGSEL_TASKSTATE 0x28
+
 .text
 
 # Interrupt handlers
@@ -21,9 +27,40 @@ timer_int_handler:
 
 .globl syscall_entry
 syscall_entry:
-	pushq $0
-	pushq $48
-	jmp generic_exception_handler
+	swapgs
+	movq %rsp, %gs:(16)
+	movq %gs:(0), %rsp
+
+	pushq $(SEGSEL_APP_DATA + 3)
+	pushq %gs:(16)
+	pushq %r11
+	pushq $(SEGSEL_APP_CODE + 3)
+	pushq %rcx
+
+	subq $8, %rsp
+	pushq $-1
+	push %gs
+	push %fs
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	subq $8, %rsp
+	pushq %r10
+	pushq %r9
+	pushq %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rbp
+	pushq %rbx
+	pushq %rdx
+	subq $8, %rsp
+	pushq %rax
+
+	movq %rsp, %rdi
+	movq %gs:(8), %rsp
+
+	call syscall_amd64
 
 .globl default_int_handler
 default_int_handler:
@@ -49,6 +86,8 @@ generic_exception_handler:
 	pushq %rcx
 	pushq %rax
 	movq %rsp, %rdi
+	swapgs
+	movq %rsp, %rsi
 	call exception
 
 .globl userret
@@ -70,7 +109,9 @@ userret:
 	popq %r14
 	popq %r15
 	popq %fs
-	addq $24, %rsp
+	swapgs
+	popq %gs
+	addq $16, %rsp
 	iretq
 
 .globl kswitch

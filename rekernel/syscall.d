@@ -2,6 +2,7 @@ module syscall;
 
 import arch.vm;
 import arch.sys;
+import arch.syscall;
 
 import core.alloc;
 import core.lib;
@@ -12,44 +13,6 @@ import trap;
 import vm;
 import schedule;
 import file;
-
-enum Sys {
-    FCNTL = 25,
-    IOCTL = 29,
-    OPENAT = 56,
-    CLOSE = 57,
-    LSEEK = 62,
-    READ = 63,
-    WRITE = 64,
-    READV = 65,
-    WRITEV = 66,
-    READLINKAT = 78,
-    NEWFSTATAT = 79,
-    EXIT = 93,
-    EXIT_GROUP = 94,
-    SET_TID_ADDRESS = 96,
-    SET_ROBUST_LIST = 99,
-    CLOCK_GETTIME = 113,
-    TGKILL = 131,
-    RT_SIGACTION = 134,
-    RT_SIGPROCMASK = 135,
-    UNAME = 160,
-    GETPID = 172,
-    GETUID = 174,
-    GETEUID = 175,
-    GETGID = 176,
-    GETEGID = 177,
-    GETTID = 178,
-    SYSINFO = 179,
-    BRK = 214,
-    MUNMAP = 215,
-    MREMAP = 216,
-    MMAP = 222,
-    MPROTECT = 226,
-    PRLIMIT64 = 261,
-    GETRANDOM = 278,
-    RSEQ = 293,
-}
 
 enum Err {
     PERM = -1,
