@@ -74,6 +74,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.UNAME:
         ret = sys_uname(p, cast(Utsname*) a0);
         break;
+    case Sys.NEWFSTATAT:
+        ret = sys_fstatat(p, cast(int) a0, a1, a2, cast(int) a3);
+        break;
     case Sys.EXIT, Sys.EXIT_GROUP:
         sys_exit(p, cast(int) a0);
     case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID:
@@ -356,4 +359,8 @@ int sys_clock_gettime(Proc* p, ulong clockid, uintptr tp) {
     t.sec = sec;
     t.nsec = nsec;
     return ret;
+}
+
+int sys_fstatat(Proc* p, int dirfd, uintptr pathname, uintptr statbuf, int flags) {
+    return 0;
 }
