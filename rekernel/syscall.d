@@ -247,10 +247,8 @@ uintptr sys_brk(Proc* p, uintptr addr) {
     uintptr oldbrk = ceilpg(p.brk);
     p.brk = addr;
     uint level;
-    Pte* pte = p.pt.walk(addr, level, &knew!(Pagetable));
-    if (!pte) {
-        return Err.NOMEM;
-    } else if (!pte.valid) {
+    Pte* pte = p.pt.walk(addr, level);
+    if (!pte || !pte.valid) {
         usize diff = ceilpg(addr) - oldbrk;
         ubyte[] data = kzalloc(diff);
         if (!data)
@@ -259,7 +257,7 @@ uintptr sys_brk(Proc* p, uintptr addr) {
             kfree(data);
             return Err.NOMEM;
         }
-    } else if ((pte.perm & Perm.USER) == 0) {
+    } else if (pte && (pte.perm & Perm.USER) == 0) {
         return Err.FAULT;
     }
     return p.brk;
