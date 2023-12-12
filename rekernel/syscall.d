@@ -47,6 +47,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.GETPID:
         ret = sys_getpid(p);
         break;
+    case Sys.GETTID:
+        ret = 42;
+        break;
     case Sys.BRK:
         ret = sys_brk(p, a0);
         break;
@@ -79,6 +82,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.MPROTECT:
         // TODO: mprotect
         ret = 0;
+        break;
+    case Sys.CLOCK_GETTIME:
+        ret = sys_clock_gettime(p, a0, a1);
         break;
     case Sys.MREMAP, Sys.SYSINFO:
         // not implemented
@@ -325,4 +331,25 @@ int sys_munmap(Proc* p, uintptr addr, usize length) {
     }
 
     return 0;
+}
+
+struct TimeSpec {
+    ulong sec;
+    ulong nsec;
+}
+
+enum {
+    CLOCK_REALTIME  = 0,
+    CLOCK_MONOTONIC = 1,
+}
+
+int sys_clock_gettime(Proc* p, ulong clockid, uintptr tp) {
+    if (!checkptr(p, tp, TimeSpec.sizeof)) {
+        return Err.FAULT;
+    }
+    if (clockid != CLOCK_REALTIME && clockid != CLOCK_MONOTONIC) {
+        return Err.INVAL;
+    }
+    TimeSpec* t = cast(TimeSpec*) tp;
+    return time(&t.sec, &t.nsec);
 }

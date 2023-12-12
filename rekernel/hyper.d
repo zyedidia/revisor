@@ -16,6 +16,7 @@ enum Hyper {
     READ  = 3,
     CLOSE = 4,
     LSEEK = 5,
+    TIME  = 6,
 }
 
 __gshared {
@@ -91,4 +92,8 @@ int isatty(int file) {
 
 int fstat(int file, void* st) {
     return -1;
+}
+
+int time(ulong* sec, ulong* nano) {
+    return cast(int) hypercall(Hyper.TIME, cast(uintptr) sec, cast(uintptr) nano);
 }

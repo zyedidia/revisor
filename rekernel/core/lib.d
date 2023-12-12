@@ -25,6 +25,8 @@ usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
 int fseek(void* stream, ssize off, uint whence);
 int fclose(void* stream);
 
+int time(ulong* sec, ulong* nsec);
+
 extern (C) __gshared {
     extern void* stdout;
     extern void* stderr;

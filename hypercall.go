@@ -2,11 +2,13 @@ package revisor
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
+	"time"
 
 	"github.com/zyedidia/revisor/kvm"
 )
@@ -18,6 +20,7 @@ const (
 	hypRead  = 3
 	hypClose = 4
 	hypLseek = 5
+	hypTime  = 6
 )
 
 const (
@@ -59,6 +62,13 @@ var (
 
 func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, a5 uint64) (uint64, error) {
 	switch num {
+	case hypTime:
+		now := time.Now()
+		a0 := m.VtoP(cpu, a0)
+		a1 := m.VtoP(cpu, a1)
+		binary.LittleEndian.PutUint64(m.Slice(a0, a0+8), uint64(now.Second()))
+		binary.LittleEndian.PutUint64(m.Slice(a1, a1+8), uint64(now.Nanosecond()))
+		return 0, nil
 	case hypWrite:
 		fd := a0
 		ptr := m.VtoP(cpu, a1)
