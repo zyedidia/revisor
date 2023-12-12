@@ -42,8 +42,6 @@ bool checkstr(Proc* p, uintptr str) {
 uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulong a3, ulong a4, ulong a5) {
     uintptr ret;
 
-    // printf("syscall: %ld\n", sysno);
-
     switch (sysno) {
     case Sys.GETPID:
         ret = sys_getpid(p);
@@ -115,7 +113,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         ret = Err.NOSYS;
     }
 
-    // printf("ret = %lx\n", ret);
+    // printf("syscall %ld = %lx\n", sysno, ret);
 
     return ret;
 }
@@ -249,7 +247,7 @@ uintptr sys_brk(Proc* p, uintptr addr) {
     uintptr oldbrk = ceilpg(p.brk);
     p.brk = addr;
     uint level;
-    Pte* pte = p.pt.walk(addr, level);
+    Pte* pte = p.pt.walk(addr, level, &knew!(Pagetable));
     if (!pte) {
         return Err.NOMEM;
     } else if (!pte.valid) {
