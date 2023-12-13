@@ -42,6 +42,7 @@ enum Sys {
     GETRANDOM = 318,
     RSEQ = 334,
     ARCH_PRCTL = 158,
+    FSTAT = 5,
 }
 
 enum {

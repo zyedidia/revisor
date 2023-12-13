@@ -12,6 +12,7 @@ enum Sys {
     WRITEV = 66,
     READLINKAT = 78,
     NEWFSTATAT = 79,
+    FSTAT = 80,
     EXIT = 93,
     EXIT_GROUP = 94,
     SET_TID_ADDRESS = 96,

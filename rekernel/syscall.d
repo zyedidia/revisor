@@ -73,6 +73,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.UNAME:
         ret = sys_uname(p, cast(Utsname*) a0);
         break;
+    case Sys.FSTAT:
+        ret = sys_fstatat(p, cast(int) a0, 0, a2, AT_EMPTY_PATH);
+        break;
     case Sys.NEWFSTATAT:
         ret = sys_fstatat(p, cast(int) a0, a1, a2, cast(int) a3);
         break;
@@ -354,21 +357,20 @@ int sys_clock_gettime(Proc* p, ulong clockid, uintptr tp) {
 }
 
 int sys_fstatat(Proc* p, int dirfd, uintptr pathname, uintptr statbuf, int flags) {
+    if ((flags & AT_EMPTY_PATH) == 0) {
+        if (!checkstr(p, pathname))
+            return Err.FAULT;
+        // TODO: only supports AT_EMPTY_PATH
+        return Err.INVAL;
+    }
     if (!checkptr(p, statbuf, statbuf.sizeof))
-        return Err.FAULT;
-    if (!checkstr(p, pathname))
         return Err.FAULT;
     VFile file;
     if (!p.fdtable.get(dirfd, file))
         return Err.BADF;
     if (!file.stat)
         return Err.BADF;
-    char* path = cast(char*) pathname;
     Stat* stat = cast(Stat*) statbuf;
-    if ((flags & AT_EMPTY_PATH) == 0) {
-        // TODO: only supports AT_EMPTY_PATH
-        return Err.INVAL;
-    }
     StatHyper stath;
     if (file.stat(file.dev, p, &stath) < 0)
         return Err.INVAL;
