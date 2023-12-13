@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -33,12 +35,18 @@ const (
 )
 
 type Container struct {
+	dir     string
 	fdtable map[uint64]*os.File
 	nextfd  uint64
 }
 
-func NewContainer() *Container {
+func NewContainer(dir string) *Container {
+	path, err := filepath.Abs(dir)
+	if err != nil {
+		panic(err)
+	}
 	return &Container{
+		dir: path,
 		fdtable: map[uint64]*os.File{
 			0: os.Stdin,
 			1: os.Stdout,
@@ -140,7 +148,16 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 		flags := a1
 		mode := a2
 
-		f, err := os.OpenFile(name, int(flags), fs.FileMode(mode))
+		abs, err := filepath.Abs(name)
+		if err != nil {
+			panic(err)
+		}
+		if !strings.HasPrefix(abs, c.dir) {
+			log.Printf("blocked access to %s", abs)
+			return errFail, nil
+		}
+
+		f, err := os.OpenFile(abs, int(flags), fs.FileMode(mode))
 		if err != nil {
 			return errFail, nil
 		}

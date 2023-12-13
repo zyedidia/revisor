@@ -23,7 +23,7 @@ private immutable(char)* flags2cmode(int flags) {
 int file_new(VFile* vf, char* name, int flags, int mode) {
     int kfd = open(name, flags, mode);
     if (kfd < 0)
-        return errno;
+        return kfd;
     void* cfile = fdopen(kfd, flags2cmode(flags));
     if (!cfile)
         return Err.BADF;

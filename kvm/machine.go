@@ -25,7 +25,7 @@ type Machine struct {
 	handler HypercallHandler
 }
 
-func NewMachine(kvmPath string, ncpus int, memSize int, handler HypercallHandler) (*Machine, error) {
+func NewMachine(kvmPath string, ncpus int, memSize int64, handler HypercallHandler) (*Machine, error) {
 	devkvm, err := os.OpenFile(kvmPath, os.O_RDWR, 0o644)
 	if err != nil {
 		return nil, err
