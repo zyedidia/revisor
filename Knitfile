@@ -1,9 +1,9 @@
 return b{
-    $ build:VB: cmd/revisor/revix.elf
+    $ build:VB: cmd/revisor/rekernel.elf
         go build ./cmd/revisor
-    $ install:VB: cmd/revisor/revix.elf
+    $ install:VB: cmd/revisor/rekernel.elf
         go install ./cmd/revisor
-    $ cmd/revisor/revix.elf: rekernel/kernel.elf
+    $ cmd/revisor/rekernel.elf: rekernel/kernel.elf
         cp $input $output
     include("rekernel/build.knit")
 }

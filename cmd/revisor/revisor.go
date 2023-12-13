@@ -14,8 +14,8 @@ import (
 	"github.com/zyedidia/revisor/kvm"
 )
 
-//go:embed revix.elf
-var revix []byte
+//go:embed rekernel.elf
+var rekernel []byte
 
 func parseMem(mem string) (int64, error) {
 	num := bytes.Buffer{}
@@ -48,7 +48,7 @@ func parseMem(mem string) (int64, error) {
 
 func main() {
 	trace := flag.Bool("trace", false, "show instruction trace")
-	kernel := flag.String("kernel", "revix", "guest kernel")
+	kernel := flag.String("kernel", "rekernel", "guest kernel")
 	dir := flag.String("dir", ".", "directory to make available to the guest")
 	mem := flag.String("mem", "2G", "maximum memory available to the guest")
 
@@ -68,8 +68,8 @@ func main() {
 	var kdata io.ReaderAt
 
 	switch *kernel {
-	case "revix":
-		kdata = bytes.NewReader(revix)
+	case "rekernel":
+		kdata = bytes.NewReader(rekernel)
 	default:
 		kfile, err := os.Open(*kernel)
 		if err != nil {
