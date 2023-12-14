@@ -369,7 +369,7 @@ err:
         ka = kalloc(size);
         if (!ka)
             return false;
-        ensure(pt.map_region(start, ka2pa(ka.ptr), ka.length, Perm.READ | Perm.WRITE | Perm.USER));
+        ensure(pt.map_region(start, ka2pa(ka.ptr), ka.length, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER));
 
         if (fd >= 0) {
             VFile file;
