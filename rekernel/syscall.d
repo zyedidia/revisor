@@ -119,7 +119,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         ret = Err.NOSYS;
     }
 
-    printf("syscall %ld = %ld\n", sysno, ret);
+    printf("syscall %ld = %lx\n", sysno, ret);
 
     return ret;
 }
@@ -326,6 +326,7 @@ int sys_uname(Proc* p, Utsname* buf) {
 }
 
 uintptr sys_mmap(Proc* p, uintptr addr, usize length, int prot, int flags, int fd, long offset) {
+    printf("mmap %lx %ld\n", addr, length);
     addr = truncpg(addr);
     length = ceilpg(length);
 

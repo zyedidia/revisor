@@ -135,6 +135,7 @@ err:
         foreach (ref ProgHeader iter; phdr) {
             if (iter.type != PT_LOAD)
                 continue;
+            printf("PT_LOAD %lx\n", iter.vaddr);
             // TODO: permissions
             uintptr start = truncpg(iter.vaddr);
             uintptr end = ceilpg(iter.vaddr + iter.memsz);
@@ -246,6 +247,8 @@ err:
         *p_argvp++ = 0;
         *p_argvp++ = 0; // envp
 
+        printf("interp_base: %lx\n", interp_base);
+        printf("interp_entry: %lx\n", interp_entry);
         Auxv* av = cast(Auxv*) p_argvp;
         *av++ = Auxv(AT_SECURE, 0);
         *av++ = Auxv(AT_BASE, interp_base);
@@ -299,16 +302,47 @@ err:
     }
 
     bool map_vma(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
+        // TODO: Clobber any overlapping intervals.
+
         if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE)
             return false;
 
-        // TODO: Clobber any overlapping intervals.
         Interval!(VmArea) v;
         while (vmas.overlaps(start, size, v)) {
+            ensure(vmas.remove(v.start, v.size));
+            printf("%lx %lx overlaps %lx %lx\n", start, start+size, v.start, v.start+v.size);
+            if (v.start < start) {
+                ensure(vmas.add(v.start, start - v.start, v.val));
+                printf("adding %lx %lx\n", v.start, v.start + start - v.start);
+            }
+            if ((v.start + v.size) > (start + size)) {
+                ensure(vmas.add(start + size, (v.start + v.size) - (start + size), v.val));
+                printf("adding %lx %lx\n", start + size, v.start + v.size);
+            }
+            // uintptr overlap_start = max(start, v.start);
+            // usize overlap_size = min(start + size, v.start + v.size) - overlap_start;
+            // // memset(overlap_start, 0, overlap_size);
+            // if (overlap_start - start > 0) {
+            //     if (!map_vma_no_overlap(start, overlap_start - start, v.prot, v.flags, fd, offset))
+            //         return false;
+            // }
+            // if (start + size - (overlap_start + overlap_size) > 0) {
+            //     if (!map_vma_no_overlap(overlap_start + overlap_size, start + size - (overlap_start + overlap_size), v.prot, v.flags, fd, offset))
+            //         return false;
+            // }
+        }
+
+        return map_vma_no_overlap(start, size, prot, flags, fd, offset, ka);
+    }
+
+    bool map_vma_no_overlap(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
+        Interval!(VmArea) v;
+        if (vmas.overlaps(start, size, v)) {
             return false;
         }
 
         // Otherwise good to add.
+        printf("adding %lx %lx %ld\n", start, start+size, size);
         if (!vmas.add(start, size, VmArea(prot, flags))) {
             return false;
         }
@@ -318,16 +352,17 @@ err:
 
         // Split the free region.
         bool ok = free_vmas.remove(i.start, i.size);
-        assert(ok, "vma start was not a free region");
-        // This needs to be atomic with the remove.
-        if (start - i.start != 0) {
-            ok = free_vmas.add(i.start, start - i.start, Empty());
-            assert(ok);
-        }
-        if (i.size - size != 0) {
-            if (!free_vmas.add(start + size, i.size - (start - i.start) - size, Empty())) {
-                // If this fails, we might have problems.
-                return false;
+        if (ok) {
+            // This needs to be atomic with the remove.
+            if (start - i.start != 0) {
+                ok = free_vmas.add(i.start, start - i.start, Empty());
+                assert(ok);
+            }
+            if (i.size - size != 0) {
+                if (!free_vmas.add(start + size, i.size - (start - i.start) - size, Empty())) {
+                    // If this fails, we might have problems.
+                    return false;
+                }
             }
         }
 

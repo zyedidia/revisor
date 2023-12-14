@@ -56,6 +56,7 @@ extern (C) {
     }
 
     void exception(Trapframe* tf) {
+        printf("rsp: %lx\n", tf.regs.rbp);
         panicf("exception rip: 0x%lx, intno: %ld, err: %ld, cr2: 0x%lx\n", tf.epc, tf.intno, tf.err, rd_cr2());
     }
 
