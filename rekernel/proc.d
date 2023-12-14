@@ -92,86 +92,115 @@ struct Proc {
     }
 
     static Proc* make_from_file(char* pathname, int argc, char** argv) {
-        int kfd = open(pathname, O_RDONLY, 0);
-        if (kfd < 0) {
+        void* f = fopen(pathname, "rb");
+        if (!f) {
             return null;
         }
+        ubyte[] buf = readfile(f);
+        if (!buf)
+            return null;
+        ensure(fclose(f) == 0);
 
         Proc* p = Proc.make_empty();
         if (!p)
             goto err;
-        if (!p.load(kfd))
-            goto err;
-        if (!p.setup(argc, argv))
+        if (!p.setup(buf.ptr, argc, argv))
             goto err;
 
-        close(kfd);
+        kfree(buf);
+
+        p.state = State.RUNNABLE;
 
         return p;
 err:
-        close(kfd);
+        kfree(buf);
         kfree(p);
         return null;
     }
 
-    bool load(int kfd) {
-        FileHeader ehdr;
-        if (read(kfd, &ehdr, FileHeader.sizeof) != FileHeader.sizeof) {
-            return false;
-        }
+    bool load(ubyte* buf, ref uintptr base, ref uintptr last, ref uintptr entry) {
+        FileHeader* ehdr = cast(FileHeader*) buf;
 
         // TODO: check header
-
-        usize sz = ehdr.phnum * ProgHeader.sizeof;
-        ProgHeader* phdr = cast(ProgHeader*) kalloc(sz);
-        if (!phdr) {
+        uintptr dyn_base = 0;
+        if (ehdr.type != ET_DYN && ehdr.type != ET_EXEC) {
             return false;
         }
-        if (lseek(kfd, ehdr.phoff, SEEK_SET) < 0) {
-            goto err;
-        }
-        if (read(kfd, phdr, sz) != sz) {
-            goto err;
-        }
 
-        for (ProgHeader* iter = phdr; iter < &phdr[ehdr.phnum]; iter++) {
+        // TODO: harden the loader against adversarial ELF files.
+
+        ProgHeader[] phdr = (cast(ProgHeader*) (buf + ehdr.phoff))[0 .. ehdr.phnum];
+
+        base = uintptr.max;
+        foreach (ref ProgHeader iter; phdr) {
             if (iter.type != PT_LOAD)
                 continue;
+            // TODO: permissions
             uintptr start = truncpg(iter.vaddr);
             uintptr end = ceilpg(iter.vaddr + iter.memsz);
             uintptr offset = iter.vaddr - start;
-            void* segment = aligned_alloc(PAGESIZE, end - start);
-            if (!segment)
-                goto err;
 
-            if (lseek(kfd, iter.offset, SEEK_SET) < 0)
-                goto err;
-            if (read(kfd, segment + offset, iter.filesz) != iter.filesz)
-                goto err;
+            void* segment;
+            if (ehdr.type == ET_EXEC) {
+                segment = aligned_alloc(PAGESIZE, end - start);
+                if (!segment)
+                    goto err;
+                if (!pt.map_region(start, ka2pa(segment), end - start, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER))
+                    goto err;
+            } else {
+                ubyte[] ka;
+                if (dyn_base == 0) {
+                    uintptr addr;
+                    if (!map_vma_any(end - start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0, addr, ka))
+                        goto err;
+                    dyn_base = addr;
+                } else {
+                    if (!map_vma(dyn_base + start, end - start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0, ka))
+                        goto err;
+                }
+                segment = ka.ptr;
+            }
+
+            memcpy(segment + offset, buf + iter.offset, iter.filesz);
             memset(segment + offset + iter.filesz, 0, iter.memsz - iter.filesz);
 
-            if (!pt.map_region(start, ka2pa(segment), end - start, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER))
-                goto err;
-
-            if (end > brk)
-                brk = end;
+            if (dyn_base + end > last)
+                last = dyn_base + end;
+            if (dyn_base + start < base)
+                base = dyn_base + start;
         }
 
-        trapframe.epc = ehdr.entry;
-        trapframe.setup();
-        kfree(phdr);
-
-        state = State.RUNNABLE;
+        entry = dyn_base + ehdr.entry;
 
         return true;
 err:
-        kfree(phdr);
         return false;
     }
 
-    bool setup(int argc, char** argv) {
-        if (argc <= 0 || argc >= ARGC_MAX) {
+    bool setup(ubyte* buf, int argc, char** argv) {
+        if (argc <= 0 || argc >= ARGC_MAX)
             return false;
+
+        uintptr base, last, entry, interp_base, interp_last, interp_entry;
+        if (!load(buf, base, last, entry))
+            return false;
+        brk = last;
+
+        FileHeader* ehdr = cast(FileHeader*) buf;
+        ProgHeader[] phdr = (cast(ProgHeader*) buf + ehdr.phoff)[0 .. ehdr.phnum];
+
+        char* interp_name = elf_interp(buf);
+        if (interp_name) {
+            void* f = fopen(interp_name, "rb");
+            if (!f)
+                return false;
+            ubyte[] interp = readfile(f);
+            if (!buf)
+                return false;
+            ensure(fclose(f) == 0);
+            if (!this.load(interp.ptr, interp_base, interp_last, interp_entry))
+                return false;
+            kfree(interp);
         }
 
         ubyte[] ustack = kzalloc(USTACK_SIZE);
@@ -219,7 +248,11 @@ err:
 
         Auxv* av = cast(Auxv*) p_argvp;
         *av++ = Auxv(AT_SECURE, 0);
-        *av++ = Auxv(AT_ENTRY, trapframe.epc);
+        *av++ = Auxv(AT_BASE, interp_base);
+        *av++ = Auxv(AT_PHDR, base + ehdr.phoff);
+        *av++ = Auxv(AT_PHNUM, ehdr.phnum);
+        *av++ = Auxv(AT_PHENT, ProgHeader.sizeof);
+        *av++ = Auxv(AT_ENTRY, entry);
         *av++ = Auxv(AT_EXECFN, cast(ulong) p_argvp_start[0]);
         *av++ = Auxv(AT_PAGESZ, PAGESIZE);
         // TODO: use actual random bytes
@@ -232,6 +265,12 @@ err:
         *av++ = Auxv(AT_GID, 1000);
         *av++ = Auxv(AT_EGID, 1000);
         *av++ = Auxv(AT_NULL, 0);
+
+        if (interp_entry)
+            trapframe.epc = interp_entry;
+        else
+            trapframe.epc = entry;
+        trapframe.setup();
 
         return true;
     }
@@ -247,7 +286,7 @@ err:
         yield();
     }
 
-    bool map_vma_any(usize size, int prot, int flags, ref uintptr addr) {
+    bool map_vma_any(usize size, int prot, int flags, int fd, ssize offset, ref uintptr addr, ref ubyte[] ka) {
         Interval!(Empty) i;
         // Find a region that is large enough.
         if (!free_vmas.find(size, i)) {
@@ -256,16 +295,16 @@ err:
 
         addr = i.start;
 
-        return map_vma(i.start, size, prot, flags);
+        return map_vma(i.start, size, prot, flags, fd, offset, ka);
     }
 
-    bool map_vma(uintptr start, usize size, int prot, int flags) {
+    bool map_vma(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
         if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE)
             return false;
 
-        // Cannot overlap any existing intervals.
+        // TODO: Clobber any overlapping intervals.
         Interval!(VmArea) v;
-        if (vmas.overlaps(start, size, v)) {
+        while (vmas.overlaps(start, size, v)) {
             return false;
         }
 
@@ -279,7 +318,7 @@ err:
 
         // Split the free region.
         bool ok = free_vmas.remove(i.start, i.size);
-        assert(ok);
+        assert(ok, "vma start was not a free region");
         // This needs to be atomic with the remove.
         if (start - i.start != 0) {
             ok = free_vmas.add(i.start, start - i.start, Empty());
@@ -292,9 +331,29 @@ err:
             }
         }
 
-        ubyte[] mem = kalloc(size);
-        assert(mem);
-        ensure(pt.map_region(start, ka2pa(mem.ptr), mem.length, Perm.READ | Perm.WRITE | Perm.USER));
+        ka = kalloc(size);
+        if (!ka)
+            return false;
+        ensure(pt.map_region(start, ka2pa(ka.ptr), ka.length, Perm.READ | Perm.WRITE | Perm.USER));
+
+        if (fd >= 0) {
+            VFile file;
+            if (!fdtable.get(fd, file))
+                return false;
+            if (!file.lseek || !file.read)
+                return false;
+            ssize orig = file.lseek(file.dev, &this, 0, SEEK_CUR);
+            file.lseek(file.dev, &this, offset, SEEK_SET);
+            ubyte[PAGESIZE] buf;
+            ssize n, total;
+            usize remaining = ka.length;
+            while ((n = file.read(file.dev, &this, buf.ptr, min(buf.length, remaining))) != 0) {
+                memcpy(&ka[total], buf.ptr, n);
+                total += n;
+                remaining -= n;
+            }
+            file.lseek(file.dev, &this, orig, SEEK_SET);
+        }
 
         return true;
     }

@@ -1,5 +1,23 @@
 module core.lib;
 
+import core.alloc;
+
+ubyte[] readfile(void* f) {
+    if (fseek(f, 0, SEEK_END) != 0)
+        return null;
+    ssize size = ftell(f);
+    if (fseek(f, 0, SEEK_SET) != 0)
+        return null;
+    ubyte[] buf = kalloc(size);
+    if (!buf)
+        return null;
+    if (fread(buf.ptr, size, 1, f) != 1) {
+        kfree(buf);
+        return null;
+    }
+    return buf;
+}
+
 extern (C):
 
 void* memcpy(void* dst, const(void)* src, usize n);
@@ -19,6 +37,7 @@ ssize write(int fd, void* buf, usize count);
 ssize lseek(int fd, ssize offset, int whence);
 int close(int fd);
 
+void* fopen(const(char)* path, const(char)* mode);
 void* fdopen(int fd, const(char)* mode);
 usize fread(const void* ptr, usize size, usize nmemb, void* stream);
 usize fwrite(const void* ptr, usize size, usize nmemb, void* stream);
@@ -26,6 +45,7 @@ int fseek(void* stream, ssize off, uint whence);
 int fclose(void* stream);
 int fflush(void* stream);
 int fileno(void* stream);
+ssize ftell(void* stream);
 
 int time(ulong* sec, ulong* nsec);
 

@@ -43,6 +43,7 @@ enum Sys {
     RSEQ = 334,
     ARCH_PRCTL = 158,
     FSTAT = 5,
+    PREAD64 = 17,
 }
 
 enum {

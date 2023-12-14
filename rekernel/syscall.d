@@ -58,6 +58,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.READ:
         ret = sys_read(p, cast(int) a0, a1, a2);
         break;
+    case Sys.PREAD64:
+        ret = sys_pread64(p, cast(int) a0, a1, a2, a3);
+        break;
     case Sys.WRITE:
         ret = sys_write(p, cast(int) a0, a1, a2);
         break;
@@ -116,7 +119,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         ret = Err.NOSYS;
     }
 
-    // printf("syscall %ld = %lx\n", sysno, ret);
+    printf("syscall %ld = %ld\n", sysno, ret);
 
     return ret;
 }
@@ -192,6 +195,23 @@ ssize sys_read(Proc* p, int fd, uintptr buf, usize size) {
         size -= n;
     }
     return i;
+}
+
+ssize sys_pread64(Proc* p, int fd, uintptr buf, usize size, ssize offset) {
+    VFile file;
+    if (!p.fdtable.get(fd, file)) {
+        return Err.BADF;
+    }
+    if (file.read == null || file.lseek == null) {
+        return Err.PERM;
+    }
+    if (!checkptr(p, buf, size)) {
+        return Err.FAULT;
+    }
+    ssize orig = file.lseek(file.dev, p, 0, SEEK_CUR);
+    file.lseek(file.dev, p, offset, SEEK_SET);
+    scope(exit) file.lseek(file.dev, p, orig, SEEK_SET);
+    return file.read(file.dev, p, cast(ubyte*) buf, size);
 }
 
 ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
@@ -306,18 +326,16 @@ int sys_uname(Proc* p, Utsname* buf) {
 }
 
 uintptr sys_mmap(Proc* p, uintptr addr, usize length, int prot, int flags, int fd, long offset) {
-    assert(fd == -1);
-    assert(offset == 0);
-
     addr = truncpg(addr);
     length = ceilpg(length);
 
+    ubyte[] ka;
     if (addr == 0) {
-        if (!p.map_vma_any(length, prot, flags, addr)) {
+        if (!p.map_vma_any(length, prot, flags, fd, offset, addr, ka)) {
             return Err.NOMEM;
         }
     } else {
-        if (!p.map_vma(addr, length, prot, flags)) {
+        if (!p.map_vma(addr, length, prot, flags, fd, offset, ka)) {
             return Err.NOMEM;
         }
     }

@@ -10,6 +10,7 @@ enum Sys {
     WRITE = 64,
     READV = 65,
     WRITEV = 66,
+    PREAD64 = 67,
     READLINKAT = 78,
     NEWFSTATAT = 79,
     FSTAT = 80,

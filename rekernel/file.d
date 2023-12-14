@@ -55,7 +55,10 @@ int file_stat(void* dev, Proc* p, StatHyper* statbuf) {
 }
 
 ssize file_lseek(void* dev, Proc* p, ssize off, uint whence) {
-    return fseek(dev, off, whence);
+    ssize r = fseek(dev, off, whence);
+    if (r < 0)
+        return r;
+    return ftell(dev);
 }
 
 int file_close(void* dev, Proc* p) {
