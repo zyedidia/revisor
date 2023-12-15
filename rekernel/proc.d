@@ -21,8 +21,9 @@ private enum {
     usize KSTACK_SIZE  = 4 * PAGESIZE,
     usize USTACK_SIZE  = 16 * PAGESIZE,
     uintptr USTACK_VA  = 0x0000_7fff_0000,
-    uintptr MMAP_START = 0x0001_0000_0000,
+    uintptr MMAP_START = 0x0070_0000_0000,
     usize MMAP_SIZE    = gb(512),
+    usize BRK_BASE     = gb(4),
     int ARGC_MAX       = 1024,
 }
 
@@ -135,7 +136,6 @@ err:
         foreach (ref ProgHeader iter; phdr) {
             if (iter.type != PT_LOAD)
                 continue;
-            printf("PT_LOAD %lx\n", iter.vaddr);
             // TODO: permissions
             uintptr start = truncpg(iter.vaddr);
             uintptr end = ceilpg(iter.vaddr + iter.memsz);
@@ -185,7 +185,7 @@ err:
         uintptr base, last, entry, interp_base, interp_last, interp_entry;
         if (!load(buf, base, last, entry))
             return false;
-        brk = last;
+        ubyte[] ka;
 
         FileHeader* ehdr = cast(FileHeader*) buf;
         ProgHeader[] phdr = (cast(ProgHeader*) buf + ehdr.phoff)[0 .. ehdr.phnum];
@@ -203,6 +203,8 @@ err:
                 return false;
             kfree(interp);
         }
+
+        brk = BRK_BASE;
 
         ubyte[] ustack = kzalloc(USTACK_SIZE);
         if (!ustack) {
@@ -247,8 +249,6 @@ err:
         *p_argvp++ = 0;
         *p_argvp++ = 0; // envp
 
-        printf("interp_base: %lx\n", interp_base);
-        printf("interp_entry: %lx\n", interp_entry);
         Auxv* av = cast(Auxv*) p_argvp;
         *av++ = Auxv(AT_SECURE, 0);
         *av++ = Auxv(AT_BASE, interp_base);
@@ -304,20 +304,18 @@ err:
     bool map_vma(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
         // TODO: Clobber any overlapping intervals.
 
-        if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE)
+        if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE) {
             return false;
+        }
 
         Interval!(VmArea) v;
         while (vmas.overlaps(start, size, v)) {
             ensure(vmas.remove(v.start, v.size));
-            printf("%lx %lx overlaps %lx %lx\n", start, start+size, v.start, v.start+v.size);
             if (v.start < start) {
                 ensure(vmas.add(v.start, start - v.start, v.val));
-                printf("adding %lx %lx\n", v.start, v.start + start - v.start);
             }
             if ((v.start + v.size) > (start + size)) {
                 ensure(vmas.add(start + size, (v.start + v.size) - (start + size), v.val));
-                printf("adding %lx %lx\n", start + size, v.start + v.size);
             }
             // uintptr overlap_start = max(start, v.start);
             // usize overlap_size = min(start + size, v.start + v.size) - overlap_start;
@@ -342,7 +340,6 @@ err:
         }
 
         // Otherwise good to add.
-        printf("adding %lx %lx %ld\n", start, start+size, size);
         if (!vmas.add(start, size, VmArea(prot, flags))) {
             return false;
         }
@@ -366,7 +363,7 @@ err:
             }
         }
 
-        ka = kalloc(size);
+        ka = kzalloc(size);
         if (!ka)
             return false;
         ensure(pt.map_region(start, ka2pa(ka.ptr), ka.length, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER));
@@ -379,7 +376,7 @@ err:
                 return false;
             ssize orig = file.lseek(file.dev, &this, 0, SEEK_CUR);
             file.lseek(file.dev, &this, offset, SEEK_SET);
-            ubyte[PAGESIZE] buf;
+            ubyte[PAGESIZE] buf = void;
             ssize n, total;
             usize remaining = ka.length;
             while ((n = file.read(file.dev, &this, buf.ptr, min(buf.length, remaining))) != 0) {

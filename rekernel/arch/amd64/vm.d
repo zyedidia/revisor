@@ -36,7 +36,7 @@ struct Pte {
 
     void pa(uintptr pa) {
         // TODO: setting this multiple times is bad
-        data |= pa & ~0xFFFUL;
+        data = pa & ~0xFFFUL;
     }
 
     ubyte valid() {
@@ -125,6 +125,7 @@ struct Pagetable {
     }
 
     bool map_region(uintptr va, uintptr pa, usize size, Perm perm, Pagetable* function() ptalloc) {
+        assert(size % PAGESIZE == 0);
         ssize last_index = -1;
         Pagetable* l4pagetable = null;
         for (; size != 0; va += PAGESIZE, pa += PAGESIZE, size -= PAGESIZE) {

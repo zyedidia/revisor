@@ -29,7 +29,8 @@ void* aligned_alloc(usize alignment, usize size);
 void free(void* ptr);
 
 usize strlen(const(char)* s);
-usize strnlen(const(char*) s, usize len);
+usize strnlen(const(char)* s, usize len);
+int strcmp(const(char)* s1, const(char)* s2);
 
 int open(const char* name, int flags, int mode);
 ssize read(int fd, void* buf, usize count);
