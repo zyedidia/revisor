@@ -88,7 +88,7 @@ struct FdTable {
         files[fd] = f;
     }
 
-    VFile* alloc(ref int fd) {
+    VFile* alloc(ref int fd) return {
         int i;
         for (i = 0; i < NUM_FILE; i++) {
             if (!allocated[i])

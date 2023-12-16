@@ -1,6 +1,3 @@
-[submodule "kernel/newlib"]
-	path = kernel/newlib
-	url = https://github.com/bminor/newlib
 [submodule "rekernel/picolibc"]
 	path = rekernel/picolibc
     branch = general-regs-only
