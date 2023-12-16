@@ -21,8 +21,9 @@ private enum {
     usize KSTACK_SIZE  = 4 * PAGESIZE,
     usize USTACK_SIZE  = 16 * PAGESIZE,
     uintptr USTACK_VA  = 0x0000_7fff_0000,
-    uintptr MMAP_START = 0x0001_0000_0000,
+    uintptr MMAP_START = 0x0070_0000_0000,
     usize MMAP_SIZE    = gb(512),
+    usize BRK_BASE     = gb(4),
     int ARGC_MAX       = 1024,
 }
 
@@ -184,7 +185,7 @@ err:
         uintptr base, last, entry, interp_base, interp_last, interp_entry;
         if (!load(buf, base, last, entry))
             return false;
-        brk = last;
+        ubyte[] ka;
 
         FileHeader* ehdr = cast(FileHeader*) buf;
         ProgHeader[] phdr = (cast(ProgHeader*) buf + ehdr.phoff)[0 .. ehdr.phnum];
@@ -202,6 +203,8 @@ err:
                 return false;
             kfree(interp);
         }
+
+        brk = BRK_BASE;
 
         ubyte[] ustack = kzalloc(USTACK_SIZE);
         if (!ustack) {
@@ -299,12 +302,40 @@ err:
     }
 
     bool map_vma(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
-        if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE)
-            return false;
-
         // TODO: Clobber any overlapping intervals.
+
+        if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE) {
+            return false;
+        }
+
         Interval!(VmArea) v;
         while (vmas.overlaps(start, size, v)) {
+            ensure(vmas.remove(v.start, v.size));
+            if (v.start < start) {
+                ensure(vmas.add(v.start, start - v.start, v.val));
+            }
+            if ((v.start + v.size) > (start + size)) {
+                ensure(vmas.add(start + size, (v.start + v.size) - (start + size), v.val));
+            }
+            // uintptr overlap_start = max(start, v.start);
+            // usize overlap_size = min(start + size, v.start + v.size) - overlap_start;
+            // // memset(overlap_start, 0, overlap_size);
+            // if (overlap_start - start > 0) {
+            //     if (!map_vma_no_overlap(start, overlap_start - start, v.prot, v.flags, fd, offset))
+            //         return false;
+            // }
+            // if (start + size - (overlap_start + overlap_size) > 0) {
+            //     if (!map_vma_no_overlap(overlap_start + overlap_size, start + size - (overlap_start + overlap_size), v.prot, v.flags, fd, offset))
+            //         return false;
+            // }
+        }
+
+        return map_vma_no_overlap(start, size, prot, flags, fd, offset, ka);
+    }
+
+    bool map_vma_no_overlap(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
+        Interval!(VmArea) v;
+        if (vmas.overlaps(start, size, v)) {
             return false;
         }
 
@@ -318,23 +349,24 @@ err:
 
         // Split the free region.
         bool ok = free_vmas.remove(i.start, i.size);
-        assert(ok, "vma start was not a free region");
-        // This needs to be atomic with the remove.
-        if (start - i.start != 0) {
-            ok = free_vmas.add(i.start, start - i.start, Empty());
-            assert(ok);
-        }
-        if (i.size - size != 0) {
-            if (!free_vmas.add(start + size, i.size - (start - i.start) - size, Empty())) {
-                // If this fails, we might have problems.
-                return false;
+        if (ok) {
+            // This needs to be atomic with the remove.
+            if (start - i.start != 0) {
+                ok = free_vmas.add(i.start, start - i.start, Empty());
+                assert(ok);
+            }
+            if (i.size - size != 0) {
+                if (!free_vmas.add(start + size, i.size - (start - i.start) - size, Empty())) {
+                    // If this fails, we might have problems.
+                    return false;
+                }
             }
         }
 
-        ka = kalloc(size);
+        ka = kzalloc(size);
         if (!ka)
             return false;
-        ensure(pt.map_region(start, ka2pa(ka.ptr), ka.length, Perm.READ | Perm.WRITE | Perm.USER));
+        ensure(pt.map_region(start, ka2pa(ka.ptr), ka.length, Perm.READ | Perm.WRITE | Perm.EXEC | Perm.USER));
 
         if (fd >= 0) {
             VFile file;
@@ -344,7 +376,7 @@ err:
                 return false;
             ssize orig = file.lseek(file.dev, &this, 0, SEEK_CUR);
             file.lseek(file.dev, &this, offset, SEEK_SET);
-            ubyte[PAGESIZE] buf;
+            ubyte[PAGESIZE] buf = void;
             ssize n, total;
             usize remaining = ka.length;
             while ((n = file.read(file.dev, &this, buf.ptr, min(buf.length, remaining))) != 0) {

@@ -132,7 +132,7 @@ func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
 	go func(cpu int) {
 		var err error
 		for tc := 0; ; tc++ {
-			err = m.RunInfiniteLoop(cpu)
+			err = m.RunInfiniteLoop(cpu, trace)
 			if !trace {
 				break
 			}
@@ -155,7 +155,7 @@ func (m *Machine) StartVCPU(cpu int, trace bool, wg *sync.WaitGroup) {
 
 // RunInfiniteLoop runs the guest cpu until there is an error.
 // If the error is ErrExitDebug, this function can be called again.
-func (m *Machine) RunInfiniteLoop(cpu int) error {
+func (m *Machine) RunInfiniteLoop(cpu int, trace bool) error {
 	// https://www.kernel.org/doc/Documentation/virtual/kvm/api.txt
 	// - vcpu ioctls: These query and set attributes that control the operation
 	//   of a single virtual cpu.
@@ -179,6 +179,8 @@ func (m *Machine) RunInfiniteLoop(cpu int) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 			}
+
+			m.SingleStep(trace)
 
 			continue
 		}
