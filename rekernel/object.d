@@ -35,3 +35,13 @@ void ensure(bool b, string msg = "ensure failure", string file = __FILE__, int l
         panic(file, line, msg);
     }
 }
+
+bool __equals(scope const string lhs, scope const string rhs) {
+    if (lhs.length != rhs.length)
+        return false;
+    for (usize i = 0; i < lhs.length; i++) {
+        if (lhs[i] != rhs[i])
+            return false;
+    }
+    return true;
+}

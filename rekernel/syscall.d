@@ -14,6 +14,7 @@ import trap;
 import vm;
 import schedule;
 import file;
+import config;
 
 enum Err {
     PERM = -1,
@@ -116,11 +117,12 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     }
     default:
         printf("[warning]: unknown syscall: %ld\n", sysno);
-        ret = Err.NOSYS;
+        return Err.NOSYS;
     }
 
-
-    // printf("syscall %ld = %lx\n", sysno, ret);
+    if (trace) {
+        printf("strace: %s() = %lx\n", syscall_names[sysno].ptr, ret);
+    }
 
     return ret;
 }

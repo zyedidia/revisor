@@ -18,6 +18,10 @@ ubyte[] readfile(void* f) {
     return buf;
 }
 
+string tostring(immutable(char)* s) {
+    return  s[0 .. strlen(s)];
+}
+
 extern (C):
 
 void* memcpy(void* dst, const(void)* src, usize n);

@@ -1,7 +1,7 @@
 return b{
     $ all:VB: hello.elf test.elf alloc.elf argv.elf file.elf
     $ %.elf: %.c
-        gcc -O2 $input -o $output
+        gcc -O2 $input -o $output -static
     $ %.elf: %.S
         gcc -nostdlib $input -o $output -static
 }

@@ -5,6 +5,24 @@ import arch.amd64.sys;
 import syscall;
 import proc;
 
+enum {
+    ARCH_SET_FS = 0x1002,
+}
+
+int sys_arch_prctl(Proc* p, int code, ulong addr) {
+    switch (code) {
+    case ARCH_SET_FS:
+        if (!checkptr(p, addr, 1)) {
+            return Err.FAULT;
+        }
+        // p.trapframe.regs.fs = SEGSEL_APP_DATA;
+        wr_msr(MSR_IA32_FS_BASE, addr);
+        return 0;
+    default:
+        return Err.INVAL;
+    }
+}
+
 enum Sys {
     FCNTL = 72,
     IOCTL = 16,
@@ -46,20 +64,43 @@ enum Sys {
     PREAD64 = 17,
 }
 
-enum {
-    ARCH_SET_FS = 0x1002,
-}
-
-int sys_arch_prctl(Proc* p, int code, ulong addr) {
-    switch (code) {
-    case ARCH_SET_FS:
-        if (!checkptr(p, addr, 1)) {
-            return Err.FAULT;
-        }
-        // p.trapframe.regs.fs = SEGSEL_APP_DATA;
-        wr_msr(MSR_IA32_FS_BASE, addr);
-        return 0;
-    default:
-        return Err.INVAL;
-    }
-}
+immutable string[] syscall_names = [
+    Sys.FCNTL: "fcntl",
+    Sys.IOCTL: "ioctl",
+    Sys.OPENAT: "openat",
+    Sys.CLOSE: "close",
+    Sys.LSEEK: "lseek",
+    Sys.READ: "read",
+    Sys.WRITE: "write",
+    Sys.READV: "readv",
+    Sys.WRITEV: "writev",
+    Sys.READLINKAT: "readlinkat",
+    Sys.NEWFSTATAT: "newfstatat",
+    Sys.EXIT: "exit",
+    Sys.EXIT_GROUP: "exit_group",
+    Sys.SET_TID_ADDRESS: "set_tid_address",
+    Sys.SET_ROBUST_LIST: "set_robust_list",
+    Sys.CLOCK_GETTIME: "clock_gettime",
+    Sys.TGKILL: "tgkill",
+    Sys.RT_SIGACTION: "rt_sigaction",
+    Sys.RT_SIGPROCMASK: "rt_sigprocmask",
+    Sys.UNAME: "uname",
+    Sys.GETPID: "getpid",
+    Sys.GETUID: "getuid",
+    Sys.GETEUID: "geteuid",
+    Sys.GETGID: "getgid",
+    Sys.GETEGID: "getegid",
+    Sys.GETTID: "gettid",
+    Sys.SYSINFO: "sysinfo",
+    Sys.BRK: "brk",
+    Sys.MUNMAP: "munmap",
+    Sys.MREMAP: "mremap",
+    Sys.MMAP: "mmap",
+    Sys.MPROTECT: "mprotect",
+    Sys.PRLIMIT64: "prlimit64",
+    Sys.GETRANDOM: "getrandom",
+    Sys.RSEQ: "rseq",
+    Sys.ARCH_PRCTL: "arch_prctl",
+    Sys.FSTAT: "fstat",
+    Sys.PREAD64: "pread64",
+];

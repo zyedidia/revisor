@@ -2,14 +2,17 @@ module main;
 
 import arch.regs;
 
+import core.lib;
+
 import schedule : schedule, runq, main;
 import proc;
+import config;
 
 __gshared Context old;
 
 extern (C) void kswitch(Proc* p, Context* old, Context* new_);
 
-extern (C) void kmain(int argc, char** argv) {
+extern (C) void kmain(int argc, immutable(char)** argv) {
     printf("arrived in kmain at %p\n", &kmain);
 
     if (argc == 0) {

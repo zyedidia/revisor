@@ -92,7 +92,7 @@ struct Proc {
         return p;
     }
 
-    static Proc* make_from_file(char* pathname, int argc, char** argv) {
+    static Proc* make_from_file(immutable(char)* pathname, int argc, immutable(char)** argv) {
         void* f = fopen(pathname, "rb");
         if (!f) {
             return null;
@@ -178,7 +178,7 @@ err:
         return false;
     }
 
-    bool setup(ubyte* buf, int argc, char** argv) {
+    bool setup(ubyte* buf, int argc, immutable(char)** argv) {
         if (argc <= 0 || argc >= ARGC_MAX)
             return false;
 
