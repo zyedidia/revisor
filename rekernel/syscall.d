@@ -17,14 +17,30 @@ import file;
 import config;
 
 enum Err {
-    PERM = -1,
-    NOENT = 2,
-    BADF = -9,
-    NOMEM = -12,
-    FAULT = -14,
-    INVAL = -22,
-    NFILE = -23,
-    NOSYS = -38,
+    AGAIN       = -11,       // Try again
+    BADF        = -9,        // Bad file number
+    CHILD       = -10,       // No child processes
+    FAULT       = -14,       // Bad address
+    FBIG        = -27,       // File too large
+    INTR        = -4,        // Interrupted system call
+    INVAL       = -22,       // Invalid argument
+    IO          = -5,        // I/O error
+    MFILE       = -24,       // Too many open files
+    NAMETOOLONG = -36,       // File name too long
+    NFILE       = -23,       // File table overflow
+    NOENT       = -2,        // No such file or directory
+    NOEXEC      = -8,        // Exec format error
+    NOMEM       = -12,       // Out of memory
+    NOSPC       = -28,       // No space left on device
+    NOSYS       = -38,       // Invalid system call number
+    NXIO        = -6,        // No such device or address
+    PERM        = -1,        // Operation not permitted
+    PIPE        = -32,       // Broken pipe
+    RANGE       = -34,       // Out of range
+    SPIPE       = -29,       // Illegal seek
+    SRCH        = -3,        // No such process
+    TXTBSY      = -26,       // Text file busy
+    TOOBIG      = -7,        // Argument list too long
 }
 
 bool checkptr(Proc* p, uintptr ptr, usize size) {
@@ -104,6 +120,12 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         break;
     case Sys.MUNMAP:
         ret = sys_munmap(p, a0, a1);
+        break;
+    case Sys.CLONE:
+        ret = sys_clone(p);
+        break;
+    case Sys.WAIT4:
+        ret = sys_wait4(p, cast(int) a0, a1);
         break;
     case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64, Sys.FCNTL:
         // ignored
@@ -292,6 +314,12 @@ uintptr sys_brk(Proc* p, uintptr addr) {
 noreturn sys_exit(Proc* p, int status) {
     printf("%d: exited\n", p.pid);
 
+    // TODO: reparent
+
+    if (p.parent && p.parent.state == Proc.State.BLOCKED && p.parent.wq == &waitq) {
+        waitq.wake(p.parent);
+    }
+
     p.block(&exitq, Proc.State.EXITED);
 
     // should not return
@@ -404,4 +432,49 @@ int sys_fstatat(Proc* p, int dirfd, uintptr pathname, uintptr statbuf, int flags
     stat.st_ino = stath.ino;
     stat.st_mtim = TimeSpec(stath.mtim_sec, stath.mtim_nsec);
     return 0;
+}
+
+int sys_wait4(Proc* p, int pid, uintptr wstatus) {
+    if (pid != -1 || wstatus != 0)
+        return Err.INVAL;
+    if (p.children.length == 0)
+        return Err.CHILD;
+
+    while (1) {
+        Proc* zombie = exitq.front;
+        while (zombie) {
+            if (zombie.parent == p) {
+                int zpid = zombie.pid;
+                for (usize i = 0; i < p.children.length; i++) {
+                    if (p.children[i] == zombie) {
+                        p.children.unordered_remove(i);
+                        break;
+                    }
+                }
+                exitq.remove(zombie);
+                // TODO: free the zombie
+                return zpid;
+            }
+            zombie = zombie.next;
+        }
+
+        p.block(&waitq, Proc.State.BLOCKED);
+    }
+}
+
+int sys_clone(Proc* p) {
+    return sys_fork(p);
+}
+
+int sys_fork(Proc* p) {
+    Proc* child = Proc.make_from_parent(p);
+    if (!child) {
+        return Err.NOMEM;
+    }
+    child.trapframe.regs.ret = 0;
+    p.children.append(child);
+
+    int pid = child.pid;
+    runq.push_front(child);
+    return pid;
 }

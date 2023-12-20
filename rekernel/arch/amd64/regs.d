@@ -18,6 +18,10 @@ struct Regs {
     ulong r15;
     ulong fs;
     ulong gs;
+
+    void ret(ulong val) {
+        rax = val;
+    }
 }
 
 struct Context {

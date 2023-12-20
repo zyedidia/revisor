@@ -62,6 +62,11 @@ enum Sys {
     ARCH_PRCTL = 158,
     FSTAT = 5,
     PREAD64 = 17,
+    WAIT4 = 61,
+    CLONE = 56,
+    FORK = 57,
+    VFORK = 58,
+    EXECVE = 59,
 }
 
 immutable string[] syscall_names = [
@@ -103,4 +108,9 @@ immutable string[] syscall_names = [
     Sys.ARCH_PRCTL: "arch_prctl",
     Sys.FSTAT: "fstat",
     Sys.PREAD64: "pread64",
+    Sys.WAIT4: "wait4",
+    Sys.CLONE: "clone",
+    Sys.FORK: "fork",
+    Sys.VFORK: "vfork",
+    Sys.EXECVE: "execve",
 ];

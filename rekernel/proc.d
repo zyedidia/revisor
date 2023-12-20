@@ -9,6 +9,7 @@ import core.alloc;
 import core.lib;
 import core.math;
 import core.interval;
+import core.vector;
 
 import elf;
 import vm;
@@ -29,9 +30,9 @@ private enum {
 
 struct Proc {
     enum State {
-        RUNNABLE = 0,
-        BLOCKED = 1,
-        EXITED = 2,
+        RUNNABLE,
+        BLOCKED,
+        EXITED,
     }
 
     Trapframe trapframe;
@@ -47,10 +48,13 @@ struct Proc {
 
     FdTable fdtable;
 
+    Proc* parent;
+    Vector!(Proc*) children;
+    void* wq;
+
     Proc* next;
     Proc* prev;
     State state;
-    void* wq;
 
     align(16) ubyte[KSTACK_SIZE] kstack;
     static assert(kstack.length % 16 == 0);
@@ -90,6 +94,10 @@ struct Proc {
         p.fdtable.init();
 
         return p;
+    }
+
+    static Proc* make_from_parent(Proc* parent) {
+        return null;
     }
 
     static Proc* make_from_file(immutable(char)* pathname, int argc, immutable(char)** argv) {

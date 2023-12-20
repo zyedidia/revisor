@@ -23,6 +23,7 @@ extern (C) void kswitch(Proc* p, Context* old, Context* new_);
 __gshared {
     Queue runq;
     Queue exitq;
+    Queue waitq;
     Context scheduler;
     Proc* main;
 }

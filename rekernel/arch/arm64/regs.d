@@ -33,6 +33,10 @@ struct Regs {
     ulong x29;
     ulong x30;
     ulong sp; // loaded from sp_el0
+
+    void ret(ulong val) {
+        x0 = val;
+    }
 };
 
 struct Context {

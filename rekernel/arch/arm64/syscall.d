@@ -38,6 +38,9 @@ enum Sys {
     PRLIMIT64 = 261,
     GETRANDOM = 278,
     RSEQ = 293,
+    WAIT4 = 260,
+    CLONE = 220,
+    EXECVE = 221,
 }
 
 immutable string[] syscall_names = [
@@ -78,4 +81,7 @@ immutable string[] syscall_names = [
     Sys.PRLIMIT64: "prlimit64",
     Sys.GETRANDOM: "getrandom",
     Sys.RSEQ: "rseq",
+    Sys.WAIT4: "wait4",
+    Sys.CLONE: "clone",
+    Sys.EXECVE: "execve",
 ]
