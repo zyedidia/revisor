@@ -18,14 +18,15 @@ import (
 )
 
 const (
-	hypWrite = 0
-	hypExit  = 1
-	hypOpen  = 2
-	hypRead  = 3
-	hypClose = 4
-	hypLseek = 5
-	hypTime  = 6
-	hypFstat = 7
+	hypWrite      = 0
+	hypExit       = 1
+	hypOpen       = 2
+	hypRead       = 3
+	hypClose      = 4
+	hypLseek      = 5
+	hypTime       = 6
+	hypFstat      = 7
+	hypGetdents64 = 8
 )
 
 const (
@@ -78,6 +79,14 @@ type stat struct {
 	ino       uint64
 }
 
+type dirent64 struct {
+	ino    uint64
+	off    int64
+	reclen uint16
+	typ    uint8
+	name   [256]uint8
+}
+
 var (
 	ErrExit             = errors.New("exited")
 	ErrUnknownHypercall = errors.New("unknown hypercall")
@@ -92,6 +101,19 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 		binary.LittleEndian.PutUint64(m.Slice(a0, a0+8), uint64(now.Unix()))
 		binary.LittleEndian.PutUint64(m.Slice(a1, a1+8), uint64(now.Nanosecond()))
 		return 0, nil
+	case hypGetdents64:
+		fd := a0
+		dirp := m.VtoP(cpu, a1)
+		count := a2
+		f, ok := c.fdtable[fd]
+		if !ok {
+			return errFail, nil
+		}
+		n, err := syscall.ReadDirent(int(f.Fd()), m.Slice(dirp, dirp+count))
+		if err != nil {
+			return errFail, nil
+		}
+		return uint64(n), nil
 	case hypFstat:
 		fd := a0
 		ptr := m.VtoP(cpu, a1)

@@ -41,6 +41,7 @@ enum Sys {
     WAIT4 = 260,
     CLONE = 220,
     EXECVE = 221,
+    GETDENTS64 = 61,
 }
 
 immutable string[] syscall_names = [

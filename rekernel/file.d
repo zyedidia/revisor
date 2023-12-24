@@ -38,6 +38,7 @@ VFile std_new(void* stream) {
     vf.write = &file_write;
     vf.lseek = &file_lseek;
     vf.stat = &file_stat;
+    vf.getdents64 = &file_getdents64;
     vf.close = &file_close;
     return vf;
 }
@@ -61,6 +62,10 @@ ssize file_lseek(void* dev, Proc* p, ssize off, uint whence) {
     return ftell(dev);
 }
 
+ssize file_getdents64(void* dev, Proc* p, void* dirp, usize count) {
+    return getdents64(fileno(dev), dirp, count);
+}
+
 int file_close(void* dev, Proc* p) {
     return fclose(dev);
 }
@@ -72,6 +77,7 @@ struct VFile {
     ssize function(void* dev, Proc* p, ssize off, uint whence) lseek;
     int function(void* dev, Proc* p) close;
     int function(void* dev, Proc* p, StatHyper* stat) stat;
+    ssize function(void* dev, Proc* p, void* dirp, usize count) getdents64;
 }
 
 struct FdTable {

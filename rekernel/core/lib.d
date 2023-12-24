@@ -51,6 +51,7 @@ int fclose(void* stream);
 int fflush(void* stream);
 int fileno(void* stream);
 ssize ftell(void* stream);
+ssize getdents64(int fd, void* dirp, usize count);
 
 int time(ulong* sec, ulong* nsec);
 
@@ -64,6 +65,14 @@ struct StatHyper {
     ulong dev;
     ulong rdev;
     ulong ino;
+}
+
+struct Dirent64 {
+    ulong ino;
+    ssize off;
+    ushort reclen;
+    ubyte type;
+    char[256] name;
 }
 
 int fstat(int file, StatHyper* st);

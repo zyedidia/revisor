@@ -67,6 +67,7 @@ enum Sys {
     FORK = 57,
     VFORK = 58,
     EXECVE = 59,
+    GETDENTS64 = 217,
 }
 
 immutable string[] syscall_names = [

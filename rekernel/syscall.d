@@ -72,6 +72,9 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.LSEEK:
         ret = sys_lseek(p, cast(int) a0, a1, cast(int) a2);
         break;
+    case Sys.GETDENTS64:
+        ret = sys_getdents64(p, cast(int) a0, a1, a2);
+        break;
     case Sys.READ:
         ret = sys_read(p, cast(int) a0, a1, a2);
         break;
@@ -477,4 +480,22 @@ int sys_fork(Proc* p) {
     int pid = child.pid;
     runq.push_front(child);
     return pid;
+}
+
+ssize sys_getdents64(Proc* p, int fd, uintptr dirp, usize count) {
+    VFile file;
+    if (!p.fdtable.get(fd, file)) {
+        return Err.BADF;
+    }
+    if (file.getdents64 == null) {
+        return Err.PERM;
+    }
+    if (!checkptr(p, dirp, count)) {
+        return Err.FAULT;
+    }
+    ubyte[] kdir = kalloc(count);
+    ssize n = file.getdents64(file.dev, p, kdir.ptr, count);
+    memcpy(cast(void*) dirp, kdir.ptr, count);
+    kfree(kdir);
+    return n;
 }

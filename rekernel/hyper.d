@@ -10,14 +10,15 @@ uintptr hypercall(uintptr sysno, uintptr a0 = 0, uintptr a1 = 0, uintptr a2 = 0)
 }
 
 enum Hyper {
-    WRITE = 0,
-    EXIT  = 1,
-    OPEN  = 2,
-    READ  = 3,
-    CLOSE = 4,
-    LSEEK = 5,
-    TIME  = 6,
-    FSTAT = 7,
+    WRITE      = 0,
+    EXIT       = 1,
+    OPEN       = 2,
+    READ       = 3,
+    CLOSE      = 4,
+    LSEEK      = 5,
+    TIME       = 6,
+    FSTAT      = 7,
+    GETDENTS64 = 8,
 }
 
 __gshared {
@@ -93,6 +94,10 @@ int isatty(int file) {
 
 int fstat(int file, StatHyper* st) {
     return cast(int) hypercall(Hyper.FSTAT, file, cast(uintptr) st);
+}
+
+ssize getdents64(int fd, void* dirp, usize count) {
+    return hypercall(Hyper.GETDENTS64, fd, cast(uintptr) dirp, count);
 }
 
 int time(ulong* sec, ulong* nano) {
