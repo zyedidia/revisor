@@ -71,9 +71,9 @@ type stat struct {
 	mode      uint32
 	mtim_sec  uint64
 	mtim_nsec uint64
-	dev       uint64
 	uid       uint32
 	gid       uint32
+	dev       uint64
 	rdev      uint64
 	ino       uint64
 }

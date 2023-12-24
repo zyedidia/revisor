@@ -297,7 +297,8 @@ err:
         yield();
     }
 
-    bool map_vma_any(usize size, int prot, int flags, int fd, ssize offset, ref uintptr addr, ref ubyte[] ka) {
+    bool map_vma_any(usize length, int prot, int flags, int fd, ssize offset, ref uintptr addr, ref ubyte[] ka) {
+        usize size = ceilpg(length);
         Interval!(Empty) i;
         // Find a region that is large enough.
         if (!free_vmas.find(size, i)) {
@@ -306,11 +307,11 @@ err:
 
         addr = i.start;
 
-        return map_vma(i.start, size, prot, flags, fd, offset, ka);
+        return map_vma(i.start, length, prot, flags, fd, offset, ka);
     }
 
-    bool map_vma(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
-        // TODO: Clobber any overlapping intervals.
+    bool map_vma(uintptr start, usize length, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
+        usize size = ceilpg(length);
 
         if (start < MMAP_START || start + size >= MMAP_START + MMAP_SIZE) {
             return false;
@@ -325,23 +326,13 @@ err:
             if ((v.start + v.size) > (start + size)) {
                 ensure(vmas.add(start + size, (v.start + v.size) - (start + size), v.val));
             }
-            // uintptr overlap_start = max(start, v.start);
-            // usize overlap_size = min(start + size, v.start + v.size) - overlap_start;
-            // // memset(overlap_start, 0, overlap_size);
-            // if (overlap_start - start > 0) {
-            //     if (!map_vma_no_overlap(start, overlap_start - start, v.prot, v.flags, fd, offset))
-            //         return false;
-            // }
-            // if (start + size - (overlap_start + overlap_size) > 0) {
-            //     if (!map_vma_no_overlap(overlap_start + overlap_size, start + size - (overlap_start + overlap_size), v.prot, v.flags, fd, offset))
-            //         return false;
-            // }
         }
 
-        return map_vma_no_overlap(start, size, prot, flags, fd, offset, ka);
+        return map_vma_no_overlap(start, length, prot, flags, fd, offset, ka);
     }
 
-    bool map_vma_no_overlap(uintptr start, usize size, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
+    bool map_vma_no_overlap(uintptr start, usize length, int prot, int flags, int fd, ssize offset, ref ubyte[] ka) {
+        usize size = ceilpg(length);
         Interval!(VmArea) v;
         if (vmas.overlaps(start, size, v)) {
             return false;
@@ -386,7 +377,8 @@ err:
             file.lseek(file.dev, &this, offset, SEEK_SET);
             ubyte[PAGESIZE] buf = void;
             ssize n, total;
-            usize remaining = ka.length;
+            usize remaining = length;
+            assert(length <= ka.length);
             while ((n = file.read(file.dev, &this, buf.ptr, min(buf.length, remaining))) != 0) {
                 memcpy(&ka[total], buf.ptr, n);
                 total += n;

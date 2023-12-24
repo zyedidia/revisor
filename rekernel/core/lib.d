@@ -55,15 +55,15 @@ ssize ftell(void* stream);
 int time(ulong* sec, ulong* nsec);
 
 struct StatHyper {
-    usize size;
+    ulong size;
     uint mode;
     ulong mtim_sec;
     ulong mtim_nsec;
-    ulong ino;
-    ulong dev;
     uint uid;
     uint gid;
+    ulong dev;
     ulong rdev;
+    ulong ino;
 }
 
 int fstat(int file, StatHyper* st);

@@ -143,7 +143,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     }
 
     if (trace) {
-        printf("strace: %s() = %lx\n", syscall_names[sysno].ptr, ret);
+        printf("strace: %s() = 0x%lx\n", syscall_names[sysno].ptr, ret);
     }
 
     return ret;
@@ -236,7 +236,8 @@ ssize sys_pread64(Proc* p, int fd, uintptr buf, usize size, ssize offset) {
     ssize orig = file.lseek(file.dev, p, 0, SEEK_CUR);
     file.lseek(file.dev, p, offset, SEEK_SET);
     scope(exit) file.lseek(file.dev, p, orig, SEEK_SET);
-    return file.read(file.dev, p, cast(ubyte*) buf, size);
+    ssize n = file.read(file.dev, p, cast(ubyte*) buf, size);
+    return n;
 }
 
 ssize sys_writev(Proc* p, ulong a0, ulong a1, ulong a2) {
@@ -358,7 +359,6 @@ int sys_uname(Proc* p, Utsname* buf) {
 
 uintptr sys_mmap(Proc* p, uintptr addr, usize length, int prot, int flags, int fd, long offset) {
     addr = truncpg(addr);
-    length = ceilpg(length);
 
     ubyte[] ka;
     if (addr == 0) {
