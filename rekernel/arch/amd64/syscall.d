@@ -114,4 +114,5 @@ immutable string[] syscall_names = [
     Sys.FORK: "fork",
     Sys.VFORK: "vfork",
     Sys.EXECVE: "execve",
+    Sys.GETDENTS64: "getdents64",
 ];

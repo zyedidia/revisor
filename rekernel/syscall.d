@@ -146,7 +146,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     }
 
     if (trace) {
-        printf("strace: %s() = 0x%lx\n", syscall_names[sysno].ptr, ret);
+        printf("strace: %s() = 0x%lx\n", syscall_names[sysno].ptr == null ? "(unknown)" : syscall_names[sysno].ptr, ret);
     }
 
     return ret;

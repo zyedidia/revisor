@@ -85,4 +85,5 @@ immutable string[] syscall_names = [
     Sys.WAIT4: "wait4",
     Sys.CLONE: "clone",
     Sys.EXECVE: "execve",
+    Sys.GETDENTS64: "getdents64",
 ];
