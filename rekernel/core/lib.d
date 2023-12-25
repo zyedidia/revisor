@@ -78,11 +78,15 @@ struct Dirent64 {
 int fstat(int file, StatHyper* st);
 
 extern (C) __gshared {
-    extern void* stdout;
-    extern void* stderr;
-    extern void* stdin;
+    extern void* _tls_stdout;
+    extern void* _tls_stderr;
+    extern void* _tls_stdin;
     extern int errno;
 }
+
+void* stdout() { return _tls_stdout; }
+void* stderr() { return _tls_stderr; }
+void* stdin()  { return _tls_stdin; }
 
 noreturn exit(int status);
 

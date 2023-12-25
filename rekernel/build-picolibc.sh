@@ -3,7 +3,7 @@
 mkdir -p build
 cd build
 
-export CFLAGS="-mgeneral-regs-only -DBUFSIZ=8192"
+export CFLAGS="-mgeneral-regs-only -D__BUFSIZ__=32768"
 
 meson \
     -Dtls-model=local-exec \
@@ -18,6 +18,7 @@ meson \
     -Dformat-default=long-long \
     -Dthread-local-storage=false \
     -Datomic-ungetc=false \
+    -Dtinystdio=false \
     -Dspecsdir=none \
     ../picolibc
 ninja
