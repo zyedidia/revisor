@@ -2,6 +2,7 @@ package kvm
 
 import (
 	"fmt"
+	"os"
 	"unsafe"
 
 	"github.com/tysonmote/gommap"
@@ -30,16 +31,16 @@ func NewVM(kvmfd uintptr, memSize int64) (*vm, error) {
 	}
 	vmfd, err := createVM(kvmfd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("KVM_CREATE_VM: %w", err)
 	}
 	nofd := -1
 	mem, err := gommap.MapAt(0, uintptr(nofd), 0, memSize, gommap.PROT_READ|gommap.PROT_WRITE, gommap.MAP_SHARED|gommap.MAP_ANONYMOUS)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("mmap: %w", err)
 	}
-	sys, err := gommap.MapAt(0, uintptr(nofd), 0, 4096, gommap.PROT_NONE, gommap.MAP_SHARED|gommap.MAP_ANONYMOUS)
+	sys, err := gommap.MapAt(0, uintptr(nofd), 0, int64(os.Getpagesize()), gommap.PROT_NONE, gommap.MAP_SHARED|gommap.MAP_ANONYMOUS)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("mmap: %w", err)
 	}
 
 	return &vm{
