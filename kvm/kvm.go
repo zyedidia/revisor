@@ -133,10 +133,6 @@ func getAPIVersion(kvmfd uintptr) (uintptr, error) {
 	return Ioctl(kvmfd, IIO(kvmGetAPIVersion), uintptr(0))
 }
 
-func createVM(kvmfd uintptr) (uintptr, error) {
-	return Ioctl(kvmfd, IIO(kvmCreateVM), uintptr(0))
-}
-
 func getVCPUMMmapSize(kvmfd uintptr) (uintptr, error) {
 	return Ioctl(kvmfd, IIO(kvmGetVCPUMMapSize), uintptr(0))
 }

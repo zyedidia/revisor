@@ -73,3 +73,7 @@ func ka2pa(ka uint64) uint64 {
 func pa2ka(pa uint64) uint64 {
 	return pa + kernBase
 }
+
+func createVM(kvmfd uintptr) (uintptr, error) {
+	return Ioctl(kvmfd, IIO(kvmCreateVM), uintptr(0))
+}

@@ -19,6 +19,8 @@ meson \
     -Dthread-local-storage=false \
     -Datomic-ungetc=false \
     -Dtinystdio=false \
+    -Doptimization=3 \
+    -Dnewlib-nano-malloc=false \
     -Dspecsdir=none \
     ../picolibc
 ninja
