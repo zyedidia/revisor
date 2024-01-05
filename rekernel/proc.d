@@ -145,8 +145,8 @@ err:
             if (iter.type != PT_LOAD)
                 continue;
             // TODO: permissions
-            uintptr start = truncpg(iter.vaddr);
-            uintptr end = ceilpg(iter.vaddr + iter.memsz);
+            uintptr start = trunc(iter.vaddr, iter.align_);
+            uintptr end = ceil(iter.vaddr + iter.memsz, iter.align_);
             uintptr offset = iter.vaddr - start;
 
             void* segment;
