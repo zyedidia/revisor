@@ -379,7 +379,7 @@ err:
             ssize n, total;
             usize remaining = length;
             assert(length <= ka.length);
-            while ((n = file.read(file.dev, &this, buf.ptr, min(buf.length, remaining))) != 0) {
+            while ((n = file.read(file.dev, &this, buf.ptr, min(buf.length, remaining))) > 0) {
                 memcpy(&ka[total], buf.ptr, n);
                 total += n;
                 remaining -= n;

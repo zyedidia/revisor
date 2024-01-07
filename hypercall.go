@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -197,7 +198,9 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 			return errFail, nil
 		} else {
 			n, err := f.Read(m.Slice(ptr, ptr+size))
-			if err != nil {
+			if errors.Is(err, io.EOF) {
+				return 0, nil
+			} else if err != nil {
 				return errFail, nil
 			}
 			return uint64(n), nil

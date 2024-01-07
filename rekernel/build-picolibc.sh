@@ -18,7 +18,6 @@ meson \
     -Dformat-default=long-long \
     -Dthread-local-storage=false \
     -Datomic-ungetc=false \
-    -Doptimization=3 \
     -Dspecsdir=none \
     -Dfast-bufio=true \
     ../picolibc

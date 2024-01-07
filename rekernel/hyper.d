@@ -75,7 +75,9 @@ ssize read(int file, char* ptr, int len) {
         return -1;
     scope(exit) kfree(buf);
     ssize ret = cast(ssize) hypercall(Hyper.READ, file, cast(uintptr) buf.ptr, len);
-    memcpy(ptr, buf.ptr, len);
+    if (ret > 0) {
+        memcpy(ptr, buf.ptr, ret);
+    }
     return ret;
 }
 
@@ -97,7 +99,7 @@ int fstat(int file, StatHyper* st) {
 }
 
 ssize getdents64(int fd, void* dirp, usize count) {
-    return hypercall(Hyper.GETDENTS64, fd, cast(uintptr) dirp, count);
+    return cast(ssize) hypercall(Hyper.GETDENTS64, fd, cast(uintptr) dirp, count);
 }
 
 int time(ulong* sec, ulong* nano) {
