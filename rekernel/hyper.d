@@ -3,6 +3,8 @@ module hyper;
 import core.alloc;
 import core.lib;
 
+import arch.sys;
+
 extern (C) extern uintptr _hypercall(uintptr a0, uintptr a1, uintptr a2, uintptr sysno);
 
 uintptr hypercall(uintptr sysno, uintptr a0 = 0, uintptr a1 = 0, uintptr a2 = 0) {
@@ -40,12 +42,19 @@ void* sbrk(usize incr) {
 }
 
 int open(const char* name, int flags, int mode) {
+    if (iska(cast(uintptr) name)) {
+        return _open(name, flags, mode);
+    }
     ubyte[] buf = kalloc(strlen(name) + 1);
     if (!buf)
         return -1;
     scope(exit) kfree(buf);
     memcpy(buf.ptr, name, buf.length);
-    return cast(int) hypercall(Hyper.OPEN, cast(uintptr) buf.ptr, flags, mode);
+    return _open(cast(const char*) buf.ptr, flags, mode);
+}
+
+private int _open(const char* name, int flags, int mode) {
+    return cast(int) hypercall(Hyper.OPEN, cast(uintptr) name, flags, mode);
 }
 
 int close(int file) {
@@ -61,24 +70,38 @@ long lseek64(int file, long off, int whence) {
 }
 
 ssize write(int file, char* ptr, int len) {
+    if (iska(cast(uintptr) ptr)) {
+        return _write(file, ptr, len);
+    }
     ubyte[] buf = kalloc(len);
     if (!buf)
         return -1;
     scope(exit) kfree(buf);
     memcpy(buf.ptr, ptr, len);
-    return cast(ssize) hypercall(Hyper.WRITE, file, cast(uintptr) buf.ptr, len);
+    return _write(file, cast(char*) buf.ptr, len);
+}
+
+private ssize _write(int file, char* ptr, int len) {
+    return cast(ssize) hypercall(Hyper.WRITE, file, cast(uintptr) ptr, len);
 }
 
 ssize read(int file, char* ptr, int len) {
+    if (iska(cast(uintptr) ptr)) {
+        return _read(file, ptr, len);
+    }
     ubyte[] buf = kalloc(len);
     if (!buf)
         return -1;
     scope(exit) kfree(buf);
-    ssize ret = cast(ssize) hypercall(Hyper.READ, file, cast(uintptr) buf.ptr, len);
+    ssize ret = _read(file, cast(char*) buf.ptr, len);
     if (ret > 0) {
         memcpy(ptr, buf.ptr, ret);
     }
     return ret;
+}
+
+private ssize _read(int file, char* ptr, int len) {
+    return cast(ssize) hypercall(Hyper.READ, file, cast(uintptr) ptr, len);
 }
 
 noreturn _exit(int status) {

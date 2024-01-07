@@ -89,6 +89,11 @@ uintptr pa2ka(uintptr pa) {
 }
 
 pragma(inline, true)
+uintptr iska(uintptr addr) {
+    return addr >= KERNEL_START;
+}
+
+pragma(inline, true)
 void vm_fence() {
     asm {
         "dsb ish" ::: "memory";
