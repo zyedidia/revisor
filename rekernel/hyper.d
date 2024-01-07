@@ -60,7 +60,7 @@ long lseek64(int file, long off, int whence) {
     return cast(long) hypercall(Hyper.LSEEK, file, off, whence);
 }
 
-int write(int file, char* ptr, int len) {
+ssize write(int file, char* ptr, int len) {
     ubyte[] buf = kalloc(len);
     if (!buf)
         return -1;
@@ -69,7 +69,7 @@ int write(int file, char* ptr, int len) {
     return cast(int) hypercall(Hyper.WRITE, file, cast(uintptr) buf.ptr, len);
 }
 
-int read(int file, char* ptr, int len) {
+ssize read(int file, char* ptr, int len) {
     ubyte[] buf = kalloc(len);
     if (!buf)
         return -1;
