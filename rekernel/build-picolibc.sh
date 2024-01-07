@@ -21,7 +21,6 @@ meson \
     -Doptimization=3 \
     -Dspecsdir=none \
     -Dfast-bufio=true \
-    -Dnewlib-nano-malloc=false \
     ../picolibc
 ninja
 ninja install

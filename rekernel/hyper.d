@@ -66,7 +66,7 @@ ssize write(int file, char* ptr, int len) {
         return -1;
     scope(exit) kfree(buf);
     memcpy(buf.ptr, ptr, len);
-    return cast(int) hypercall(Hyper.WRITE, file, cast(uintptr) buf.ptr, len);
+    return cast(ssize) hypercall(Hyper.WRITE, file, cast(uintptr) buf.ptr, len);
 }
 
 ssize read(int file, char* ptr, int len) {
@@ -74,7 +74,7 @@ ssize read(int file, char* ptr, int len) {
     if (!buf)
         return -1;
     scope(exit) kfree(buf);
-    int ret = cast(int) hypercall(Hyper.READ, file, cast(uintptr) buf.ptr, len);
+    ssize ret = cast(ssize) hypercall(Hyper.READ, file, cast(uintptr) buf.ptr, len);
     memcpy(ptr, buf.ptr, len);
     return ret;
 }
