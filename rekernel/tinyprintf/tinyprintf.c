@@ -440,6 +440,14 @@ void eprintf(char *fmt, ...)
     va_end(va);
 }
 
+void fprintf(void* stream, char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(std_putp, stdout_putf, fmt, va);
+    va_end(va);
+}
+
 void printf(char *fmt, ...)
 {
     va_list va;

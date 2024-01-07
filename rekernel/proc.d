@@ -400,8 +400,9 @@ err:
         // TODO: handle unmapping with lazy mapping (need to free pages individually)
         uint lvl;
         Pte* pte = pt.walk(start, lvl);
-        if (pte && pte.valid)
-            kfree(cast(void*) pa2ka(pte.pa()));
+        // TODO: free the PTE
+        // if (pte && pte.valid)
+        //     kfree(cast(void*) pa2ka(pte.pa()));
         for (usize i = 0; i < size; i += PAGESIZE) {
             pte = pt.walk(start + i, lvl);
             if (!pte || !pte.valid) {
