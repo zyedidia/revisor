@@ -12,6 +12,18 @@ import proc;
 import trap;
 import syscall;
 
+void irq_on() {
+    SysReg.daif = bits.write(SysReg.daif, 9, 6, 0b0000);
+}
+
+void irq_off() {
+    SysReg.daif = bits.write(SysReg.daif, 9, 6, 0b1111);
+}
+
+bool irq_enabled() {
+    return ((SysReg.daif >> 6) & 0b11) != 0b11;
+}
+
 extern (C) {
     void kernel_exception(Regs* regs) {
         cast(void) regs;

@@ -1,12 +1,14 @@
 module main;
 
 import arch.regs;
+import arch.trap;
 
 import core.lib;
 
 import schedule : schedule, runq, main;
 import proc;
 import config;
+import timer;
 
 __gshared Context old;
 
@@ -28,6 +30,11 @@ extern (C) void kmain(int argc, immutable(char)** argv) {
 
     main = p;
     runq.push_front(p);
+
+    timer_intr(timer.time_slice);
+    irq_on();
+
+    timer_delay_ms(1000);
 
     schedule();
 }
