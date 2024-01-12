@@ -24,6 +24,11 @@ const (
 	kvmSetIRQChip    = 0x63
 	kvmIRQLineStatus = 0x67
 
+	kvmCreateDevice  = 0xE0
+	kvmSetDeviceAttr = 0xE1
+	kvmGetDeviceAttr = 0xE2
+	kvmHasDeviceAttr = 0xE3
+
 	kvmResgisterCoalescedMMIO   = 0x67
 	kvmUnResgisterCoalescedMMIO = 0x68
 

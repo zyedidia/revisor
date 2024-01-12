@@ -77,6 +77,11 @@ func NewMachine(kvmPath string, ncpus int, memSize int64, handler HypercallHandl
 		return nil, err
 	}
 
+	err = m.createIrqController(GICv3)
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO: poison memory
 
 	return m, nil

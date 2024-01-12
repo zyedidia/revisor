@@ -13,6 +13,11 @@ const (
 	kvmArmPreferredTarget = 0xAF
 	kvmArmVcpuFinalize    = 0xC2
 	kvmArmVcpuPsci0_2     = 2
+	kvmArmSetDeviceAddr   = 0xAB
+
+	kvmVGICV2AddrTypeDist = 0
+	kvmArmDeviceVGICV2    = 0
+	kvmArmDeviceIDShift   = 16
 
 	kernBase = 0xffff_0000_0000_0000
 )
