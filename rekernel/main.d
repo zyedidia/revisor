@@ -3,6 +3,8 @@ module main;
 import arch.regs;
 import arch.trap;
 
+import arch.arm64.sys;
+
 import core.lib;
 
 import schedule : schedule, runq, main;
@@ -31,10 +33,12 @@ extern (C) void kmain(int argc, immutable(char)** argv) {
     main = p;
     runq.push_front(p);
 
-    timer_intr(timer.time_slice);
     irq_on();
+    timer_intr(1000000);
 
-    timer_delay_ms(1000);
+    // timer_delay_ms(1000);
+    printf("%ld\n", SysReg.cntp_ctl_el0);
+    printf("%ld\n", SysReg.isr_el1);
 
     schedule();
 }

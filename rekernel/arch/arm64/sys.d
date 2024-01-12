@@ -35,6 +35,7 @@ struct SysReg {
     mixin(GenSysReg!("far_el1"));
     mixin(GenSysReg!("mdscr_el1"));
     mixin(GenSysRegRdOnly!("mpidr_el1"));
+    mixin(GenSysRegRdOnly!("isr_el1"));
     mixin(GenSysRegWrOnly!("oslar_el1"));
     mixin(GenSysReg!("cpacr_el1"));
 
@@ -45,8 +46,11 @@ struct SysReg {
 
     mixin(GenSysReg!("cntfrq_el0"));
     mixin(GenSysRegRdOnly!("cntpct_el0"));
+    mixin(GenSysRegRdOnly!("cntvct_el0"));
     mixin(GenSysReg!("cntp_ctl_el0"));
     mixin(GenSysReg!("cntp_tval_el0"));
+    mixin(GenSysReg!("cntv_ctl_el0"));
+    mixin(GenSysReg!("cntv_tval_el0"));
     mixin(GenSysReg!("pmccntr_el0"));
     mixin(GenSysReg!("pmccfiltr_el0"));
     mixin(GenSysReg!("pmcntenset_el0"));

@@ -38,6 +38,10 @@ ulong timer_cycles() {
     return arch.timer_cycles();
 }
 
+ulong timer_freq() {
+    return arch.timer_freq();
+}
+
 ulong timer_time() {
     return arch.timer_time();
 }
