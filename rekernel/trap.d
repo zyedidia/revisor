@@ -12,6 +12,7 @@ import sys;
 import syscall;
 import proc;
 import vm;
+import timer;
 
 noreturn unhandled(Proc* p) {
     printf("%d: killed (unhandled)\n", p.pid);
@@ -53,4 +54,14 @@ void pagefault(Proc* p, uintptr ptr, Fault type) {
     printf("%d: pagefault on address 0x%lx (pc=%lx, sp=%lx)\n", p.pid, ptr, p.trapframe.epc, p.trapframe.user_sp);
 
     sys_exit(p, 1);
+}
+
+enum Irq {
+    TIMER,
+}
+
+void irq(Irq type) {
+    if (type == Irq.TIMER) {
+        timer_intr(TIME_SLICE);
+    }
 }

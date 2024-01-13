@@ -57,6 +57,17 @@ struct SysReg {
     mixin(GenSysReg!("pmcr_el0"));
 
     mixin(GenSysReg!("daif"));
+
+    // GICv3 CPUIF registers
+    mixin(GenSysReg!("icc_sre_el1"));
+    mixin(GenSysReg!("icc_pmr_el1"));
+    mixin(GenSysReg!("icc_ctlr_el1"));
+    mixin(GenSysReg!("icc_igrpen0_el1"));
+    mixin(GenSysReg!("icc_igrpen1_el1"));
+    mixin(GenSysReg!("icc_bpr0_el1"));
+    mixin(GenSysReg!("icc_bpr1_el1"));
+    mixin(GenSysRegRdOnly!("icc_iar0_el1"));
+    mixin(GenSysRegRdOnly!("icc_iar1_el1"));
 }
 
 enum {
@@ -104,5 +115,12 @@ void vm_fence() {
         "tlbi vmalle1" ::: "memory";
         "dsb ish" ::: "memory";
         "isb" ::: "memory";
+    }
+}
+
+pragma(inline, true)
+void isb() {
+    asm {
+        "isb";
     }
 }

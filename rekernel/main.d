@@ -34,11 +34,7 @@ extern (C) void kmain(int argc, immutable(char)** argv) {
     runq.push_front(p);
 
     irq_on();
-    timer_intr(1000000);
-
-    // timer_delay_ms(1000);
-    printf("%ld\n", SysReg.cntp_ctl_el0);
-    printf("%ld\n", SysReg.isr_el1);
+    timer_intr(TIME_SLICE);
 
     schedule();
 }

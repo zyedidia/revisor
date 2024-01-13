@@ -33,7 +33,9 @@ extern (C) {
 
     void kernel_interrupt(Regs* regs) {
         cast(void) regs;
-        panicf("kernel interrupt\n");
+
+        printf("kernel interrupt\n");
+        irq(Irq.TIMER);
     }
 
     void user_exception(Proc* p) {
@@ -57,7 +59,9 @@ extern (C) {
     }
 
     void user_interrupt(Proc* p) {
-        panicf("user interrupt\n");
+        irq(Irq.TIMER);
+
+        usertrapret(p);
     }
 }
 

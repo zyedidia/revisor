@@ -20,6 +20,7 @@ type HypercallHandler interface {
 
 type Machine struct {
 	kvmfd   uintptr
+	irqfd   uintptr
 	vm      *vm
 	runs    []*RunData
 	handler HypercallHandler
@@ -52,6 +53,11 @@ func NewMachine(kvmPath string, ncpus int, memSize int64, handler HypercallHandl
 		handler: handler,
 	}
 
+	err = m.createIrqController(GICv3)
+	if err != nil {
+		return nil, err
+	}
+
 	for cpu := 0; cpu < ncpus; cpu++ {
 		err := vm.addVCPU()
 		if err != nil {
@@ -77,7 +83,7 @@ func NewMachine(kvmPath string, ncpus int, memSize int64, handler HypercallHandl
 		return nil, err
 	}
 
-	err = m.createIrqController(GICv3)
+	err = m.finalizeIrqController()
 	if err != nil {
 		return nil, err
 	}
