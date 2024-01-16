@@ -53,7 +53,7 @@ func NewMachine(kvmPath string, ncpus int, memSize int64, handler HypercallHandl
 		handler: handler,
 	}
 
-	err = m.createIrqController(GICv3)
+	err = m.createIrqController()
 	if err != nil {
 		return nil, err
 	}

@@ -67,6 +67,7 @@ init_pml4:
 	.fill 254,8,0
 	.quad init_pdp_upper + 3 // [0xffffffff80000000 - 0xffffffffffffffff)
 
+// kernel text
 .globl init_pdp_upper
 .align 0x1000
 init_pdp_upper:
@@ -74,13 +75,16 @@ init_pdp_upper:
 	.quad 0x0000000000000083 // 0GB - 1GB, PS, RW, P
 	.quad 0x0000000040000083 // 1GB - 2GB, PS, RW, P
 
+// kernel data
 .globl init_pdp
 .align 0x1000
 init_pdp:
 	.quad 0x0000000000000083 // 0GB - 1GB, PS, RW, P
 	.quad 0x0000000040000083 // 1GB - 2GB, PS, RW, P
 	.quad 0x0000000080000083 // 2GB - 3GB, PS, RW, P
-	.fill 509,8,0
+	.quad 0x00000000c0000083 // 3GB - 4GB, PS, RW, P
+	.quad 0x0000000100000083 // 4GB - 5GB, PS, RW, P
+	.fill 507,8,0
 
 .text
 

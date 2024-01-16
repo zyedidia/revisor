@@ -1,6 +1,7 @@
 module arch.amd64.init;
 
 import arch.amd64.sys;
+import arch.amd64.apic;
 
 import core.lib;
 
@@ -103,6 +104,29 @@ private void segments_init() {
     wr_msr(MSR_IA32_FMASK, EFLAGS_TF | EFLAGS_DF | EFLAGS_IF | EFLAGS_IOPL_MASK | EFLAGS_AC | EFLAGS_NT);
 }
 
+private __gshared {
+    LocalApic* lapic = cast(LocalApic*) pa2ka(0xFEE00000);
+}
+
+private void lapic_init() {
+    enum HZ = 100;
+
+    lapic.enable(INT_IRQ + IRQ_SPURIOUS);
+
+    lapic.write(LAPIC_REG_TIMER_DIVIDE, LAPIC_TIMER_DIVIDE_1);
+    lapic.write(LAPIC_REG_LVT_TIMER, LAPIC_TIMER_PERIODIC | (INT_IRQ + IRQ_TIMER));
+    lapic.write(LAPIC_REG_TIMER_INITIAL_COUNT, 1_000_000_000 / HZ);
+
+    lapic.write(LAPIC_REG_LVT_LINT0, LAPIC_LVT_MASKED);
+    lapic.write(LAPIC_REG_LVT_LINT1, LAPIC_LVT_MASKED);
+
+    lapic.write(LAPIC_REG_LVT_ERROR, INT_IRQ + IRQ_ERROR);
+
+    lapic.error();
+    lapic.ack();
+}
+
 void arch_init() {
     segments_init();
+    // lapic_init();
 }

@@ -100,7 +100,9 @@ func (m *Machine) createIrqChip() error {
 	return errors.New("GICv2: unimplemented")
 }
 
-func (m *Machine) createIrqController(irq IrqType) error {
+func (m *Machine) createIrqController() error {
+	irq := GICv3
+
 	err := m.createDevice(irq)
 	if err != nil && irq == GICv2 {
 		return m.createIrqChip()

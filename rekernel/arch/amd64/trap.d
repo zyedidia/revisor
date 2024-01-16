@@ -7,6 +7,22 @@ import arch.amd64.init;
 import proc;
 import syscall;
 
+void irq_on() {
+    asm {
+        "sti";
+    }
+}
+
+void irq_off() {
+    asm {
+        "cli";
+    }
+}
+
+bool irq_enabled() {
+    return false;
+}
+
 struct TrapInfo {
     uintptr proc_tf_end;
     uintptr kernel_sp;
