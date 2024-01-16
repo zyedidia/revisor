@@ -111,6 +111,13 @@ uint rd_cr0() {
     return cast(uint) val;
 }
 
+pragma(inline, true)
+void outb(int port)(ubyte data) {
+    asm {
+        "outb %0, %1" : : "a"(data), "N"(port);
+    }
+}
+
 enum {
     SEGSEL_KERN_CODE = 0x8,
     SEGSEL_APP_CODE  = 0x10,

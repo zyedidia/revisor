@@ -126,7 +126,20 @@ private void lapic_init() {
     lapic.ack();
 }
 
+private void interrupts_init() {
+    lapic_init();
+
+    // Disable old programmable interrupt controller.
+    enum {
+        IO_PIC1 = 0x20,
+        IO_PIC2 = 0xA0,
+    }
+
+    outb!(IO_PIC1 + 1)(0xFF);
+    outb!(IO_PIC2 + 1)(0xFF);
+}
+
 void arch_init() {
     segments_init();
-    // lapic_init();
+    // interrupts_init();
 }

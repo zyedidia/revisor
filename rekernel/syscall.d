@@ -353,10 +353,10 @@ int sys_uname(Proc* p, Utsname* buf) {
     }
 
     addstring(buf.sysname, "Linux");
-    buf.nodename = null;
+    buf.nodename[0] = 0;
     addstring(buf.release, "6.0.0-revisor");
-    buf.version_ = null;
-    buf.machine = null;
+    buf.version_[0] = 0;
+    buf.machine[0] = 0;
     return 0;
 }
 
