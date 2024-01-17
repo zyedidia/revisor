@@ -56,6 +56,8 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 
+	start := time.Now()
+
 	c := revisor.NewContainer(*dir)
 	sz, err := parseMem(*mem)
 	if err != nil {
@@ -80,7 +82,6 @@ func main() {
 		kdata = kfile
 	}
 
-	start := time.Now()
 	err = revisor.Boot(m, kdata, args, *trace)
 	if err != nil {
 		log.Fatal(err)
