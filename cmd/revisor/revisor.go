@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/zyedidia/revisor"
 	"github.com/zyedidia/revisor/kvm"
@@ -79,8 +80,10 @@ func main() {
 		kdata = kfile
 	}
 
+	start := time.Now()
 	err = revisor.Boot(m, kdata, args, *trace)
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("time:", time.Since(start))
 }
