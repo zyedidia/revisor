@@ -159,6 +159,11 @@ enum {
     INT_GPF         = 0xd,        // General protection fault
     INT_PAGEFAULT   = 0xe,        // Page fault
 
+    INT_IRQ      = 32,
+    IRQ_TIMER    = 0,
+    IRQ_ERROR    = 19,
+    IRQ_SPURIOUS = 31,
+
     MSR_IA32_APIC_BASE           = 0x1B,
     MSR_IA32_MTRR_CAP            = 0xFE,
     MSR_IA32_MTRR_BASE           = 0x200,

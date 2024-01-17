@@ -33,9 +33,6 @@ extern (C) {
 
     void kernel_interrupt(Regs* regs) {
         cast(void) regs;
-
-        printf("kernel interrupt\n");
-        irq(Irq.TIMER);
     }
 
     void user_exception(Proc* p) {

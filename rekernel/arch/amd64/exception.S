@@ -21,7 +21,7 @@ pagefault_int_handler:
 
 .globl timer_int_handler
 timer_int_handler:
-	pushq $0                // error code
+	pushq $0 // error code
 	pushq $32
 	jmp generic_exception_handler
 
@@ -29,7 +29,7 @@ timer_int_handler:
 syscall_entry:
 	swapgs
 	movq %rsp, %gs:(16)
-	movq %gs:(0), %rsp
+	movq %gs:(0), %rsp // load proc trapframe
 
 	pushq $(SEGSEL_APP_DATA + 3)
 	pushq %gs:(16)
@@ -58,7 +58,7 @@ syscall_entry:
 	pushq %rax
 
 	movq %rsp, %rdi
-	movq %gs:(8), %rsp
+	movq %gs:(8), %rsp // load kernel stack
 
 	call syscall_amd64
 
@@ -68,6 +68,28 @@ default_int_handler:
 	jmp generic_exception_handler
 
 generic_exception_handler:
+	testb $3, 24(%rsp)
+	jz kernel_exception_handler
+
+user_exception_handler:
+	swapgs
+	movq %r15, %gs:(24) // scratch
+	movq %rsp, %r15     // old rsp stored in r15
+	movq %rsp, %gs:(16)
+	movq %gs:(0), %rsp  // load proc trapframe
+
+	// copy data from exception stack to trapframe
+	pushq 48(%r15) // %ss
+	pushq 40(%r15) // %rsp
+	pushq 32(%r15) // %rflags
+	pushq 24(%r15) // %cs
+	pushq 16(%r15) // %rip
+	pushq 8(%r15)  // error code
+	pushq 0(%r15)  // interrupt number
+
+	// restore r15
+	movq %gs:(24), %r15
+
 	pushq %gs
 	pushq %fs
 	pushq %r15
@@ -86,9 +108,31 @@ generic_exception_handler:
 	pushq %rcx
 	pushq %rax
 	movq %rsp, %rdi
-	swapgs
-	movq %rsp, %rsi
-	call exception
+
+	// load kernel stack
+	movq %gs:(8), %rsp
+	call user_exception
+
+kernel_exception_handler:
+	pushq %gs
+	pushq %fs
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	pushq %r11
+	pushq %r10
+	pushq %r9
+	pushq %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rbp
+	pushq %rbx
+	pushq %rdx
+	pushq %rcx
+	pushq %rax
+	movq %rsp, %rdi
+	call kernel_exception
 
 .globl userret
 userret:

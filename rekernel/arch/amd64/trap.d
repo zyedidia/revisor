@@ -6,6 +6,7 @@ import arch.amd64.init;
 
 import proc;
 import syscall;
+import trap;
 
 void irq_on() {
     asm {
@@ -27,6 +28,7 @@ struct TrapInfo {
     uintptr proc_tf_end;
     uintptr kernel_sp;
     uintptr saved_sp;
+    uintptr scratch;
 }
 
 __gshared TrapInfo info;
@@ -71,8 +73,28 @@ extern (C) {
         usertrapret(p);
     }
 
-    void exception(Trapframe* tf) {
-        panicf("exception rip: 0x%lx, intno: %ld, err: %ld, cr2: 0x%lx\n", tf.epc, tf.intno, tf.err, rd_cr2());
+    void kernel_exception(Trapframe* tf) {
+        switch (tf.intno) {
+        case INT_IRQ + IRQ_TIMER:
+            break;
+        default:
+            panicf("kernel exception rip: 0x%lx, intno: %ld, err: %ld, cr2: 0x%lx\n", tf.epc, tf.intno, tf.err, rd_cr2());
+        }
+    }
+
+    void user_exception(Proc* p) {
+        Trapframe* tf = &p.trapframe;
+
+        switch (tf.intno) {
+        case INT_IRQ + IRQ_TIMER:
+            lapic.ack();
+            irq(Irq.TIMER);
+            break;
+        default:
+            panicf("user exception rip: 0x%lx, intno: %ld, err: %ld, cr2: 0x%lx\n", tf.epc, tf.intno, tf.err, rd_cr2());
+        }
+
+        usertrapret(p);
     }
 
     noreturn userret(Trapframe* tf);

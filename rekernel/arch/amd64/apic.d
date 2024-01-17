@@ -3,13 +3,6 @@ module arch.amd64.apic;
 import core.volatile;
 
 enum {
-    INT_IRQ = 32,
-    IRQ_TIMER = 0,
-    IRQ_ERROR = 19,
-    IRQ_SPURIOUS = 31,
-}
-
-enum {
     LAPIC_REG_ID = 0x02,
     LAPIC_REG_TPR = 0x08,
     LAPIC_REG_SVR = 0x0F,

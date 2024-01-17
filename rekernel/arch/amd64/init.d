@@ -71,6 +71,7 @@ private void segments_init() {
     // GPF and page fault.
     set_gate(&interrupt_descriptors[INT_GPF], X86GATE_INTERRUPT, 0, cast(ulong) &gpf_int_handler);
     set_gate(&interrupt_descriptors[INT_PAGEFAULT], X86GATE_INTERRUPT, 0, cast(ulong) &pagefault_int_handler);
+    set_gate(&interrupt_descriptors[INT_IRQ + IRQ_TIMER], X86GATE_INTERRUPT, 0, cast(ulong) &timer_int_handler);
 
     PseudoDescriptor idt;
     idt.limit = interrupt_descriptors.sizeof - 1;
@@ -104,7 +105,7 @@ private void segments_init() {
     wr_msr(MSR_IA32_FMASK, EFLAGS_TF | EFLAGS_DF | EFLAGS_IF | EFLAGS_IOPL_MASK | EFLAGS_AC | EFLAGS_NT);
 }
 
-private __gshared {
+__gshared {
     LocalApic* lapic = cast(LocalApic*) pa2ka(0xFEE00000);
 }
 
@@ -141,5 +142,5 @@ private void interrupts_init() {
 
 void arch_init() {
     segments_init();
-    // interrupts_init();
+    interrupts_init();
 }
