@@ -141,12 +141,12 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         break;
     }
     default:
-        printf("[warning]: unknown syscall: %ld\n", sysno);
+        eprintf("[warning]: unknown syscall: %ld\n", sysno);
         return Err.NOSYS;
     }
 
     if (trace) {
-        printf("strace: %s() = 0x%lx\n", syscall_names[sysno].ptr == null ? "(unknown)" : syscall_names[sysno].ptr, ret);
+        eprintf("strace: %s() = 0x%lx\n", syscall_names[sysno].ptr == null ? "(unknown)" : syscall_names[sysno].ptr, ret);
     }
 
     return ret;
@@ -316,7 +316,7 @@ uintptr sys_brk(Proc* p, uintptr addr) {
 }
 
 noreturn sys_exit(Proc* p, int status) {
-    printf("%d: exited\n", p.pid);
+    eprintf("%d: exited\n", p.pid);
 
     // TODO: reparent
 

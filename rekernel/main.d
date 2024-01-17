@@ -17,8 +17,6 @@ __gshared Context old;
 extern (C) void kswitch(Proc* p, Context* old, Context* new_);
 
 extern (C) void kmain(int argc, immutable(char)** argv) {
-    printf("arrived in kmain at %p\n", &kmain);
-
     if (argc == 0) {
         eprintf("error: no user application given\n");
         return;
