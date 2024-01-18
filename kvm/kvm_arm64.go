@@ -11,8 +11,9 @@ const (
 
 	kvmArmVcpuInit        = 0xAE
 	kvmArmPreferredTarget = 0xAF
-	kvmArmVcpuFinalize    = 0xC2
-	kvmArmVcpuPsci0_2     = 2
+	kvmArmVCPUFinalize    = 0xC2
+	kvmArmVCPUPSCI0_2     = 2
+	kvmArmVCPUPMUV3       = 2
 	kvmArmSetDeviceAddr   = 0xAB
 
 	kvmVGICV2AddrTypeDist = 0
