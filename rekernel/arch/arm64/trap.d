@@ -4,6 +4,7 @@ import arch.arm64.sys;
 import arch.arm64.regs;
 import arch.arm64.vm;
 import arch.arm64.gic;
+import arch.arm64.timer;
 
 import core.lib;
 
@@ -61,11 +62,10 @@ extern (C) {
     void user_interrupt(Proc* p) {
         ulong id = SysReg.icc_iar0_el1;
 
-        printf("interrupt: %ld\n", id);
-
         Action action;
         switch (id) {
-        case GIC_PHYS_TIMER_ID:
+        case GIC_VIRT_TIMER_ID:
+            timer_intr(TIME_SLICE); // requeue timer interrupt
             action = irq(Irq.TIMER);
             break;
         case GIC_SIGNAL_ID:

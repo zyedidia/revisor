@@ -2,6 +2,7 @@ module arch.arm64.init;
 
 import arch.arm64.sys;
 import arch.arm64.gic;
+import arch.arm64.timer;
 
 import bits = core.bits;
 
@@ -17,4 +18,6 @@ void arch_init() {
 
     uint affinity = cast(uint) bits.get(SysReg.mpidr_el1, 24, 0);
     gic_init(affinity, GIC_DIST_BASE, GIC_REDIST_BASE);
+
+    timer_intr(TIME_SLICE);
 }

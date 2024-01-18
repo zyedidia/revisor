@@ -2,10 +2,13 @@ module arch.arm64.timer;
 
 import arch.arm64.sys;
 
+enum TIME_SLICE = 10000;
+
 void timer_setup() {
     // Enable cycle counter.
     SysReg.pmcr_el0 = 1;
     SysReg.pmcntenset_el0 = 1 << 31;
+    isb();
 }
 
 ulong timer_freq() {
@@ -13,7 +16,7 @@ ulong timer_freq() {
 }
 
 ulong timer_time() {
-    return SysReg.cntpct_el0;
+    return SysReg.cntvct_el0;
 }
 
 ulong timer_cycles() {
@@ -21,6 +24,7 @@ ulong timer_cycles() {
 }
 
 void timer_intr(ulong us) {
-    SysReg.cntp_tval_el0 = timer_freq() / 1_000_000 * us;
-    SysReg.cntp_ctl_el0 = 1;
+    SysReg.cntv_tval_el0 = timer_freq() / 1_000_000 * us;
+    SysReg.cntv_ctl_el0 = 1;
+    isb();
 }

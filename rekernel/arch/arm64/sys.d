@@ -49,8 +49,10 @@ struct SysReg {
     mixin(GenSysRegRdOnly!("cntvct_el0"));
     mixin(GenSysReg!("cntp_ctl_el0"));
     mixin(GenSysReg!("cntp_tval_el0"));
+    mixin(GenSysReg!("cntp_cval_el0"));
     mixin(GenSysReg!("cntv_ctl_el0"));
     mixin(GenSysReg!("cntv_tval_el0"));
+    mixin(GenSysReg!("cntv_cval_el0"));
     mixin(GenSysReg!("pmccntr_el0"));
     mixin(GenSysReg!("pmccfiltr_el0"));
     mixin(GenSysReg!("pmcntenset_el0"));
@@ -69,6 +71,7 @@ struct SysReg {
     mixin(GenSysRegRdOnly!("icc_iar0_el1"));
     mixin(GenSysRegRdOnly!("icc_iar1_el1"));
     mixin(GenSysRegWrOnly!("icc_eoir0_el1"));
+    mixin(GenSysRegWrOnly!("icc_dir_el1"));
 }
 
 enum {

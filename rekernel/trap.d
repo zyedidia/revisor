@@ -67,9 +67,6 @@ enum Irq {
 }
 
 Action irq(Irq type) {
-    if (type == Irq.TIMER) {
-        timer_intr(TIME_SLICE);
-    }
     return Action.NONE;
 }
 

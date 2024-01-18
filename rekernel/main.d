@@ -10,7 +10,6 @@ import core.lib;
 import schedule : schedule, runq, main;
 import proc;
 import config;
-import timer;
 
 __gshared Context old;
 
@@ -30,9 +29,6 @@ extern (C) void kmain(int argc, immutable(char)** argv) {
 
     main = p;
     runq.push_front(p);
-
-    irq_on();
-    timer_intr(TIME_SLICE);
 
     schedule();
 }

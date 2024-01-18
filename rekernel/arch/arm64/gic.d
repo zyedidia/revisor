@@ -12,6 +12,7 @@ enum {
 
     GICV3_GROUP0 = 0,
 
+    GIC_VIRT_TIMER_ID = 27,
     GIC_PHYS_TIMER_ID = 30,
 
     GIC_SIGNAL_ID = 16,
@@ -194,9 +195,9 @@ void gic_init(uint affinity, uintptr dist_base, uintptr redist_base) {
     SysReg.icc_igrpen1_el1 = SysReg.icc_igrpen1_el1 | 1;
     isb();
 
-    gic_set_int_priority(GIC_PHYS_TIMER_ID, rd, 0);
-    gic_set_int_group(GIC_PHYS_TIMER_ID, rd, GICV3_GROUP0);
-    gic_enable_int(GIC_PHYS_TIMER_ID, rd);
+    gic_set_int_priority(GIC_VIRT_TIMER_ID, rd, 0);
+    gic_set_int_group(GIC_VIRT_TIMER_ID, rd, GICV3_GROUP0);
+    gic_enable_int(GIC_VIRT_TIMER_ID, rd);
 
     gic_set_int_priority(16, rd, 0);
     gic_set_int_group(16, rd, GICV3_GROUP0);

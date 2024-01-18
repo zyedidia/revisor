@@ -2,8 +2,6 @@ module timer;
 
 import arch = arch.timer;
 
-enum TIME_SLICE = 1000000;
-
 void timer_setup() {
     arch.timer_setup();
 }
@@ -48,8 +46,4 @@ ulong timer_time() {
 
 ulong timer_us_since(ulong prev_time) {
     return (arch.timer_time - prev_time) * 1_000_000 / arch.timer_freq();
-}
-
-void timer_intr(ulong us) {
-    arch.timer_intr(us);
 }
