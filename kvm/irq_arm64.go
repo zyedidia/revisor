@@ -123,12 +123,34 @@ func (m *Machine) finalizeIrqController() error {
 	return nil
 }
 
-// func (m *Machine) irqLine(irq, level int) {
-// 	lvl := IrqLevel{
-// 		irq:
-// 	}
-// }
+type IrqLevel struct {
+	irq   uint32
+	level uint32
+}
 
-func (m *Machine) irqTrigger(irq int) {
+func (m *Machine) InjectIrq(irq uint32) error {
+	var irqType uint32
+	if irq <= 31 {
+		irqType = 2 // PPI
+	} else if irq <= 1019 {
+		irqType = 1 // SPI
+	}
 
+	lvl := IrqLevel{
+		irq:   (irqType << 24) | irq,
+		level: 1,
+	}
+
+	_, err := Ioctl(m.vm.fd, IIOW(kvmIRQLine, unsafe.Sizeof(lvl)), uintptr(unsafe.Pointer(&lvl)))
+	if err != nil {
+		return fmt.Errorf("KVM_IRQ_LINE: %w", err)
+	}
+
+	lvl.level = 0
+	_, err = Ioctl(m.vm.fd, IIOW(kvmIRQLine, unsafe.Sizeof(lvl)), uintptr(unsafe.Pointer(&lvl)))
+	if err != nil {
+		return fmt.Errorf("KVM_IRQ_LINE: %w", err)
+	}
+	fmt.Println("inject interrupt")
+	return nil
 }

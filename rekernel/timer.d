@@ -2,7 +2,7 @@ module timer;
 
 import arch = arch.timer;
 
-enum TIME_SLICE = 10000;
+enum TIME_SLICE = 1000000;
 
 void timer_setup() {
     arch.timer_setup();

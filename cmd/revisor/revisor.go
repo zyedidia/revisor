@@ -8,8 +8,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/zyedidia/revisor"
@@ -18,6 +20,49 @@ import (
 
 //go:embed rekernel.elf
 var rekernel []byte
+
+func registerSignals(c *revisor.Container, m *kvm.Machine) {
+	sigc := make(chan os.Signal, 1)
+
+	signal.Notify(sigc,
+		syscall.SIGABRT,
+		syscall.SIGBUS,
+		syscall.SIGCLD,
+		syscall.SIGCONT,
+		syscall.SIGFPE,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGIO,
+		syscall.SIGIOT,
+		syscall.SIGPIPE,
+		syscall.SIGPOLL,
+		syscall.SIGPWR,
+		syscall.SIGQUIT,
+		syscall.SIGSEGV,
+		syscall.SIGSTKFLT,
+		syscall.SIGSYS,
+		syscall.SIGTERM,
+		syscall.SIGTRAP,
+		syscall.SIGTSTP,
+		syscall.SIGTTIN,
+		syscall.SIGTTOU,
+		syscall.SIGUNUSED,
+		// syscall.SIGURG,
+		syscall.SIGUSR1,
+		syscall.SIGUSR2,
+		syscall.SIGWINCH,
+	)
+
+	go func() {
+		for {
+			s := <-sigc
+			err := c.Signal(m, s)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error handling signal %v: %v", s, err)
+			}
+		}
+	}()
+}
 
 func parseMem(mem string) (int64, error) {
 	num := bytes.Buffer{}
@@ -82,6 +127,8 @@ func main() {
 		defer kfile.Close()
 		kdata = kfile
 	}
+
+	registerSignals(c, m)
 
 	err = revisor.Boot(m, kdata, args, *trace)
 	if err != nil {

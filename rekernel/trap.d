@@ -19,6 +19,12 @@ noreturn unhandled(Proc* p) {
     exit(1);
 }
 
+enum Action {
+    NONE,
+    YIELD,
+    EXIT,
+}
+
 enum Fault {
     READ,
     WRITE,
@@ -60,8 +66,14 @@ enum Irq {
     TIMER,
 }
 
-void irq(Irq type) {
+Action irq(Irq type) {
     if (type == Irq.TIMER) {
         timer_intr(TIME_SLICE);
     }
+    return Action.NONE;
+}
+
+Action signal(Proc* p, ulong sig) {
+    eprintf("received signal: %lu\n", sig);
+    return Action.EXIT;
 }

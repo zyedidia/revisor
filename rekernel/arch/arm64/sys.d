@@ -68,6 +68,7 @@ struct SysReg {
     mixin(GenSysReg!("icc_bpr1_el1"));
     mixin(GenSysRegRdOnly!("icc_iar0_el1"));
     mixin(GenSysRegRdOnly!("icc_iar1_el1"));
+    mixin(GenSysRegWrOnly!("icc_eoir0_el1"));
 }
 
 enum {

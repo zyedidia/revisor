@@ -20,6 +20,7 @@ const (
 	kvmSetIdentityMapAddr  = 0x48
 
 	kvmCreateIRQChip = 0x60
+	kvmIRQLine       = 0x61
 	kvmGetIRQChip    = 0x62
 	kvmSetIRQChip    = 0x63
 	kvmIRQLineStatus = 0x67

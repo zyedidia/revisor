@@ -3,6 +3,7 @@ module arch.arm64.trap;
 import arch.arm64.sys;
 import arch.arm64.regs;
 import arch.arm64.vm;
+import arch.arm64.gic;
 
 import core.lib;
 
@@ -33,6 +34,8 @@ extern (C) {
 
     void kernel_interrupt(Regs* regs) {
         cast(void) regs;
+
+        panicf("kernel interrupt\n");
     }
 
     void user_exception(Proc* p) {
@@ -56,7 +59,32 @@ extern (C) {
     }
 
     void user_interrupt(Proc* p) {
-        irq(Irq.TIMER);
+        ulong id = SysReg.icc_iar0_el1;
+
+        printf("interrupt: %ld\n", id);
+
+        Action action;
+        switch (id) {
+        case GIC_PHYS_TIMER_ID:
+            action = irq(Irq.TIMER);
+            break;
+        case GIC_SIGNAL_ID:
+            action = signal(p, id);
+            break;
+        default:
+            panicf("unknown interrupt\n");
+        }
+
+        SysReg.icc_eoir0_el1 = id;
+        isb();
+
+        switch (action) {
+        case Action.EXIT:
+            sys_exit(p, 1);
+        case Action.YIELD:
+            break;
+        default:
+        }
 
         usertrapret(p);
     }
