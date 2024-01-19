@@ -128,7 +128,7 @@ type IrqLevel struct {
 	level uint32
 }
 
-func (m *Machine) InjectIrq(irq uint32) error {
+func (m *Machine) InjectIrq(irq uint32, level uint32) error {
 	var irqType uint32
 	if irq <= 31 {
 		irqType = 2 // PPI
@@ -138,7 +138,7 @@ func (m *Machine) InjectIrq(irq uint32) error {
 
 	lvl := IrqLevel{
 		irq:   (irqType << 24) | irq,
-		level: 1,
+		level: level,
 	}
 
 	_, err := Ioctl(m.vm.fd, IIOW(kvmIRQLine, unsafe.Sizeof(lvl)), uintptr(unsafe.Pointer(&lvl)))
@@ -146,11 +146,5 @@ func (m *Machine) InjectIrq(irq uint32) error {
 		return fmt.Errorf("KVM_IRQ_LINE: %w", err)
 	}
 
-	lvl.level = 0
-	_, err = Ioctl(m.vm.fd, IIOW(kvmIRQLine, unsafe.Sizeof(lvl)), uintptr(unsafe.Pointer(&lvl)))
-	if err != nil {
-		return fmt.Errorf("KVM_IRQ_LINE: %w", err)
-	}
-	fmt.Println("inject interrupt")
 	return nil
 }

@@ -12,15 +12,16 @@ uintptr hypercall(uintptr sysno, uintptr a0 = 0, uintptr a1 = 0, uintptr a2 = 0)
 }
 
 enum Hyper {
-    WRITE      = 0,
-    EXIT       = 1,
-    OPEN       = 2,
-    READ       = 3,
-    CLOSE      = 4,
-    LSEEK      = 5,
-    TIME       = 6,
-    FSTAT      = 7,
-    GETDENTS64 = 8,
+    WRITE        = 0,
+    EXIT         = 1,
+    OPEN         = 2,
+    READ         = 3,
+    CLOSE        = 4,
+    LSEEK        = 5,
+    TIME         = 6,
+    FSTAT        = 7,
+    GETDENTS64   = 8,
+    CLEAR_SIGNAL = 9,
 }
 
 __gshared {
@@ -127,4 +128,8 @@ ssize getdents64(int fd, void* dirp, usize count) {
 
 int time(ulong* sec, ulong* nano) {
     return cast(int) hypercall(Hyper.TIME, cast(uintptr) sec, cast(uintptr) nano);
+}
+
+void clear_signal(uint irq) {
+    hypercall(Hyper.CLEAR_SIGNAL, irq);
 }

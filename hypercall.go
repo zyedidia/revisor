@@ -19,15 +19,16 @@ import (
 )
 
 const (
-	hypWrite      = 0
-	hypExit       = 1
-	hypOpen       = 2
-	hypRead       = 3
-	hypClose      = 4
-	hypLseek      = 5
-	hypTime       = 6
-	hypFstat      = 7
-	hypGetdents64 = 8
+	hypWrite       = 0
+	hypExit        = 1
+	hypOpen        = 2
+	hypRead        = 3
+	hypClose       = 4
+	hypLseek       = 5
+	hypTime        = 6
+	hypFstat       = 7
+	hypGetdents64  = 8
+	hypClearSignal = 9
 )
 
 const (
@@ -202,6 +203,9 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 		}
 	case hypExit:
 		return 0, ErrExit
+	case hypClearSignal:
+		m.InjectIrq(uint32(a0), 0)
+		return 0, nil
 	}
 	return 0, fmt.Errorf("%w: %d (pc=%x)", ErrUnknownHypercall, num, m.GetPc(cpu))
 }

@@ -13,6 +13,7 @@ import bits = core.bits;
 import proc;
 import trap;
 import syscall;
+import hyper;
 
 void irq_on() {
     SysReg.daif = bits.write(SysReg.daif, 9, 6, 0b0000);
@@ -70,6 +71,7 @@ extern (C) {
             break;
         case GIC_SIGNAL_ID:
             action = signal(p, id);
+            clear_signal(cast(uint) id);
             break;
         default:
             panicf("unknown interrupt\n");

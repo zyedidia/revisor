@@ -33,5 +33,5 @@ func NewContainer(dirs []string) *Container {
 }
 
 func (c *Container) Signal(m *kvm.Machine, sig os.Signal) error {
-	return m.InjectIrq(16)
+	return m.InjectIrq(16, 1)
 }
