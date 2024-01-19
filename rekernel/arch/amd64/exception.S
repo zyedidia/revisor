@@ -25,6 +25,12 @@ timer_int_handler:
 	pushq $32
 	jmp generic_exception_handler
 
+.globl signal_int_handler
+signal_int_handler:
+	pushq $0 // error code
+	pushq $33
+	jmp generic_exception_handler
+
 .globl syscall_entry
 syscall_entry:
 	swapgs

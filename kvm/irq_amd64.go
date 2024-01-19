@@ -31,6 +31,21 @@ func (m *Machine) finalizeIrqController() error {
 	return nil
 }
 
+type IrqLevel struct {
+	irq   uint32
+	level uint32
+}
+
 func (m *Machine) InjectIrq(irq uint32, level uint32) error {
+	lvl := IrqLevel{
+		irq:   irq,
+		level: level,
+	}
+
+	_, err := Ioctl(m.vm.fd, IIOW(kvmIRQLine, unsafe.Sizeof(lvl)), uintptr(unsafe.Pointer(&lvl)))
+	if err != nil {
+		return fmt.Errorf("KVM_IRQ_LINE: %w", err)
+	}
+
 	return nil
 }

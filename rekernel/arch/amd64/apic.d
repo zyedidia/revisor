@@ -69,3 +69,39 @@ struct LocalApic {
         write(LAPIC_REG_EOI, 0);
     }
 }
+
+enum {
+    IOAPIC_REG_ID = 0x0,
+    IOAPIC_REG_VER = 0x1,
+    IOAPIC_REG_REDTBL = 0x10,
+}
+
+struct IoApic {
+    enum REDTBL_MASKED = 0x10000;
+
+    ApicReg[2] regs;
+
+    uint read(int reg) {
+        vst(&regs[0].val, 0);
+        return vld(&regs[1].val);
+    }
+
+    void write(int reg, uint v) {
+        vst(&regs[0].val, reg);
+        vst(&regs[1].val, v);
+    }
+
+    uint id() {
+        return read(IOAPIC_REG_ID) >> 24;
+    }
+
+    void enable_irq(int entry, int vector, uint lapic_id) {
+        write(IOAPIC_REG_REDTBL + 2 * entry, vector);
+        write(IOAPIC_REG_REDTBL + 2 * entry + 1, lapic_id << 24);
+    }
+
+    void disable_irq(int entry) {
+        write(IOAPIC_REG_REDTBL + 2 * entry, REDTBL_MASKED);
+        write(IOAPIC_REG_REDTBL + 2 * entry + 1, 0);
+    }
+}

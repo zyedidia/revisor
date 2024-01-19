@@ -161,6 +161,7 @@ enum {
 
     INT_IRQ      = 32,
     IRQ_TIMER    = 0,
+    IRQ_SIGNAL   = 1,
     IRQ_ERROR    = 19,
     IRQ_SPURIOUS = 31,
 

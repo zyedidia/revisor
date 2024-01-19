@@ -21,6 +21,8 @@ const (
 	kvmArmDeviceIDShift   = 16
 
 	kernBase = 0xffff_0000_0000_0000
+
+	SignalIRQ = 16
 )
 
 func ka2pa(ka uint64) uint64 {

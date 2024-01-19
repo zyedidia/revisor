@@ -7,6 +7,7 @@ import arch.amd64.init;
 import proc;
 import syscall;
 import trap;
+import hyper;
 
 void irq_on() {
     asm {
@@ -89,6 +90,13 @@ extern (C) {
         case INT_IRQ + IRQ_TIMER:
             lapic.ack();
             irq(Irq.TIMER);
+            break;
+        case INT_IRQ + IRQ_SIGNAL:
+            clear_signal(IRQ_SIGNAL);
+            lapic.ack();
+            if (signal(p, 0) == Action.EXIT) {
+                sys_exit(p, 1);
+            }
             break;
         default:
             panicf("user exception rip: 0x%lx, intno: %ld, err: %ld, cr2: 0x%lx\n", tf.epc, tf.intno, tf.err, rd_cr2());

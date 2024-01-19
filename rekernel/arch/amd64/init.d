@@ -18,6 +18,7 @@ private __gshared {
         void gpf_int_handler();
         void pagefault_int_handler();
         void timer_int_handler();
+        void signal_int_handler();
     }
 }
 
@@ -65,13 +66,14 @@ private void segments_init() {
     // Interrupt handler; most interrupts are effectively ignored.
     memset(interrupt_descriptors.ptr, 0, interrupt_descriptors.sizeof);
     for (uint i = 16; i < interrupt_descriptors.length; ++i) {
-        set_gate(&interrupt_descriptors[i], X86GATE_INTERRUPT, 3, cast(ulong) &default_int_handler);
+        set_gate(&interrupt_descriptors[i], X86GATE_INTERRUPT, 0, cast(ulong) &default_int_handler);
     }
 
     // GPF and page fault.
     set_gate(&interrupt_descriptors[INT_GPF], X86GATE_INTERRUPT, 0, cast(ulong) &gpf_int_handler);
     set_gate(&interrupt_descriptors[INT_PAGEFAULT], X86GATE_INTERRUPT, 0, cast(ulong) &pagefault_int_handler);
     set_gate(&interrupt_descriptors[INT_IRQ + IRQ_TIMER], X86GATE_INTERRUPT, 0, cast(ulong) &timer_int_handler);
+    set_gate(&interrupt_descriptors[INT_IRQ + IRQ_SIGNAL], X86GATE_INTERRUPT, 0, cast(ulong) &signal_int_handler);
 
     PseudoDescriptor idt;
     idt.limit = interrupt_descriptors.sizeof - 1;
@@ -107,6 +109,7 @@ private void segments_init() {
 
 __gshared {
     LocalApic* lapic = cast(LocalApic*) pa2ka(0xFEE00000);
+    IoApic* ioapic = cast(IoApic*) pa2ka(0xFEC00000);
 }
 
 private void lapic_init() {
@@ -138,6 +141,8 @@ private void interrupts_init() {
 
     outb!(IO_PIC1 + 1)(0xFF);
     outb!(IO_PIC2 + 1)(0xFF);
+
+    ioapic.enable_irq(IRQ_SIGNAL, INT_IRQ + IRQ_SIGNAL, lapic.id());
 }
 
 void arch_init() {
