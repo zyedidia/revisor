@@ -30,3 +30,7 @@ func (m *Machine) createIrqController() error {
 func (m *Machine) finalizeIrqController() error {
 	return nil
 }
+
+func (m *Machine) InjectIrq(irq uint32, level uint32) error {
+	return nil
+}
