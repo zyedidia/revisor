@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zyedidia/revisor"
@@ -58,7 +59,7 @@ func main() {
 
 	start := time.Now()
 
-	c := revisor.NewContainer(*dir)
+	c := revisor.NewContainer(strings.Split(*dir, ":"))
 	sz, err := parseMem(*mem)
 	if err != nil {
 		log.Fatal(err)

@@ -15,20 +15,20 @@ like, you can still implement custom file systems or networking via virtualized
 devices or via the hypercall API. Your custom OS will be able to run on any
 system that supports Revisor (i.e., any x86-64 or ARM64 machine running Linux
 that has KVM). We also provide an example OS that aims to be compatible with a
-subset of the Linux API, implemented in around 3,000 lines of code.
+subset of the Linux API, implemented in around 4,000 lines of code.
 
-These minimal custom "rekernels" (kernels that run within Revisor) can be used
-for a number of applications:
+These minimal "rekernels" (kernels that run within Revisor) can be used for a
+number of applications:
 
 1. User-level sandboxing: a rekernel can implement a container that restricts
    the resources from the host OS that are available to guest programs.
    Restrictions can be entirely implemented within the guest kernel, or can be
-   implemented in both the hypervisor and the guest kernel, if the threat model
-   a compromised guest kernel is a concern (i.e., the guest kernel is only
-   trusted to isolate processes within the sandbox, and the hypervisor is
-   trusted to contain the guest to a particular directory).
+   implemented in both the hypervisor and the guest kernel if a compromised
+   guest kernel is a concern (i.e., the guest kernel is only trusted to isolate
+   processes within the sandbox, and the hypervisor is trusted to contain the
+   guest to a particular directory).
 2. Program tracing: Linux's ptrace API is commonly used to trace another
-   program, but it is very slow and complex. A rekernel can similarly control
+   program, but it is slow and complex. A rekernel can similarly control
    processes and make use of debug features (breakpoints/watchpoints), but is
    much faster, and allows the rekernel to safely share an address space with
    the tracee and handle/trace any system calls it makes via virtualized
@@ -53,5 +53,31 @@ rekernels to run portably across all major operating systems. The Go hypervisor
 is written in a way such that it can portably provide its Unix-like hypercall
 API.
 
-This project is currently heavily in progress. Please stay tuned for more
-information.
+This project is currently in progress. Please stay tuned for more information.
+
+# Installation
+
+Revisor uses the [Knit](https://github.com/zyedidia/knit) build tool, so first
+install that. You'll also need a [Go compiler](https://go.dev/), and a D
+compiler (LDC 1.30+ or GDC 11+). The latest version of LDC can be downloaded
+from [here](https://github.com/ldc-developers/ldc/releases).
+
+To build, run `knit` in the repository root.
+
+# Usage
+
+By default, Revisor builds a small kernel that is compatible with a subset of
+the Linux system call interface. It can be used to run basic Linux programs
+while restricting what directories they can access. For example:
+
+```
+$ revisor /bin/ls
+[info] blocked access to /bin/ls
+error: could not execute /bin/ls
+
+$ revisor -dir /bin:/lib64:/lib:/usr:. /bin/ls
+[info] blocked access to /proc/filesystems
+[info] blocked access to /proc/mounts
+Knitfile   boot.go  go.mod  hypercall.go  rekernel  test
+README.md  cmd	    go.sum  kvm		  revisor   todo.txt
+```

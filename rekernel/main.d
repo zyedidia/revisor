@@ -24,7 +24,7 @@ extern (C) void kmain(int argc, immutable(char)** argv) {
 
     Proc* p = Proc.make_from_file(argv[0], argc, argv);
     if (!p) {
-        eprintf("failed to make proc\n");
+        eprintf("error: could not execute %s\n", argv[0]);
         return;
     }
 

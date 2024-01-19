@@ -37,18 +37,21 @@ const (
 )
 
 type Container struct {
-	dir     string
+	dirs    []string
 	fdtable map[uint64]*os.File
 	nextfd  uint64
 }
 
-func NewContainer(dir string) *Container {
-	path, err := filepath.Abs(dir)
-	if err != nil {
-		panic(err)
+func NewContainer(dirs []string) *Container {
+	for i, dir := range dirs {
+		path, err := filepath.Abs(dir)
+		if err != nil {
+			panic(err)
+		}
+		dirs[i] = path
 	}
 	return &Container{
-		dir: path,
+		dirs: dirs,
 		fdtable: map[uint64]*os.File{
 			0: os.Stdin,
 			1: os.Stdout,
@@ -66,6 +69,15 @@ func (c *Container) addFile(f *os.File) (uint64, error) {
 	c.fdtable[fd] = f
 	c.nextfd++
 	return fd, nil
+}
+
+func (c *Container) CanAccess(path string) bool {
+	for _, dir := range c.dirs {
+		if strings.HasPrefix(path, dir) {
+			return true
+		}
+	}
+	return false
 }
 
 type stat struct {
@@ -175,8 +187,8 @@ func (c *Container) Hypercall(m *kvm.Machine, cpu int, num, a0, a1, a2, a3, a4, 
 		if err != nil {
 			panic(err)
 		}
-		if !strings.HasPrefix(abs, c.dir) {
-			log.Printf("blocked access to %s", abs)
+		if !c.CanAccess(abs) {
+			fmt.Fprintf(os.Stderr, "[info] blocked access to %s\n", abs)
 			return errFail, nil
 		}
 
