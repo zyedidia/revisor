@@ -45,3 +45,26 @@ bool __equals(scope const string lhs, scope const string rhs) {
     }
     return true;
 }
+
+struct Error {
+    void* p;
+    string function(void* p) error;
+
+    static Error none() {
+        return Error();
+    }
+
+    bool err() {
+        return error != null;
+    }
+
+    bool opEquals(const Error o) {
+        return o.p == p;
+    }
+
+    static Error make(string val)() {
+        return Error(cast(void*) val.ptr, (void* p) {
+            return val;
+        });
+    }
+}
