@@ -1,10 +1,6 @@
 module core.exception;
 
-private extern (C) {
-    extern __gshared void* stdout;
-    int fwrite(immutable(void)* buf, usize size, usize nmemb, void* stream);
-    noreturn exit(int status);
-}
+import core.lib;
 
 private void putstr(string s) {
     fwrite(s.ptr, 1, s.length, stdout);

@@ -70,7 +70,7 @@ long lseek64(int file, long off, int whence) {
     return cast(long) hypercall(Hyper.LSEEK, file, off, whence);
 }
 
-ssize write(int file, char* ptr, int len) {
+ssize write(int file, char* ptr, usize len) {
     if (iska(cast(uintptr) ptr)) {
         return _write(file, ptr, len);
     }
@@ -82,11 +82,11 @@ ssize write(int file, char* ptr, int len) {
     return _write(file, cast(char*) buf.ptr, len);
 }
 
-private ssize _write(int file, char* ptr, int len) {
+private ssize _write(int file, char* ptr, usize len) {
     return cast(ssize) hypercall(Hyper.WRITE, file, cast(uintptr) ptr, len);
 }
 
-ssize read(int file, char* ptr, int len) {
+ssize read(int file, char* ptr, usize len) {
     if (iska(cast(uintptr) ptr)) {
         return _read(file, ptr, len);
     }
@@ -101,7 +101,7 @@ ssize read(int file, char* ptr, int len) {
     return ret;
 }
 
-private ssize _read(int file, char* ptr, int len) {
+private ssize _read(int file, char* ptr, usize len) {
     return cast(ssize) hypercall(Hyper.READ, file, cast(uintptr) ptr, len);
 }
 
