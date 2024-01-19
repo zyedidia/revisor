@@ -3,6 +3,8 @@ module vm;
 import arch.vm;
 import arch.sys;
 
+import core.option;
+
 enum Perm {
     NONE = 0,
     READ  = 1 << 0,
@@ -69,4 +71,84 @@ enum {
 struct VmArea {
     int prot;
     int flags;
+}
+
+struct VaMapping {
+    Pte* pte;
+    uintptr va_;
+    usize size;
+
+    uintptr va() { return va_; }
+    uintptr pa() { return pte.pa; }
+    uintptr ka() { return pa2ka(pte.pa); }
+    Perm perm()  { return pte.perm; }
+    bool read()  { return (pte.perm & Perm.READ) != 0; }
+    bool write() { return (pte.perm & Perm.WRITE) != 0; }
+    bool exec()  { return (pte.perm & Perm.EXEC) != 0; }
+    bool user()  { return (pte.perm & Perm.USER) != 0; }
+    bool cow()   { return (pte.perm & Perm.COW) != 0; }
+
+    ubyte[] pg() {
+        return (cast(ubyte*) pa2ka(pte.pa))[0 .. PAGESIZE];
+    }
+
+    ubyte* pg_raw() {
+        return cast(ubyte*) pa2ka(pte.pa);
+    }
+}
+
+struct PtIter {
+    usize idx;
+    uintptr va;
+    Pte* pte;
+    Pagetable* pt;
+
+    static PtIter get(Pagetable* pt) {
+        return PtIter(0, 0, null, pt);
+    }
+
+    bool advance() {
+        if (va > USER_END) {
+            return false;
+        }
+
+        uint lvl = Pagetable.LEVEL_4K;
+        Pte* entry = pt.walk(va, lvl);
+        if (entry) {
+            if (lvl != Pagetable.LEVEL_4K || !entry.valid()) {
+                pte = null;
+            } else {
+                pte = entry;
+            }
+            va += Pagetable.lvl2size(lvl);
+        } else {
+            pte = null;
+            va += Pagetable.lvl2size(Pagetable.LEVEL_4K);
+        }
+        return true;
+    }
+
+    Option!(VaMapping) next() {
+        uintptr va = this.va;
+        if (!advance()) {
+            return Option!(VaMapping).none;
+        }
+
+        while (!pte) {
+            va = this.va;
+            if (!advance()) {
+                return Option!(VaMapping).none;
+            }
+        }
+        return Option!(VaMapping)(VaMapping(pte, va, Pagetable.lvl2size(Pagetable.LEVEL_4K)));
+    }
+
+    int opApply(scope int delegate(ref VaMapping) dg) {
+        for (auto map = next(); map.has(); map = next()) {
+            VaMapping m = map.get();
+            int r = dg(m);
+            if (r) return r;
+        }
+        return 0;
+    }
 }

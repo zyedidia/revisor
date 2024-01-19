@@ -10,6 +10,7 @@ import core.lib;
 import schedule : schedule, runq, main;
 import proc;
 import config;
+import vm;
 
 __gshared Context old;
 
