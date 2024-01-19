@@ -60,7 +60,7 @@ if arch == "amd64" then
 end
 
 return b{
-    $ kernel.elf: $obj link/kernel.out.ld[I]
+    $ kernel.elf: $obj link/kernel.out.ld[I] build/install/lib/libc.a[I]
         gcc $input -o $output -Tlink/kernel.out.ld -static $(flags.ld)
 
     $ .%.o:D[.%.dep]: %.d
@@ -72,4 +72,7 @@ return b{
 
     $ link/kernel.out.ld: link/kernel.ld
         cpp -P -D$darch $input > $output
+
+    $ build/install/lib/libc.a:
+        ./build-picolibc.sh
 }

@@ -60,9 +60,16 @@ This project is currently in progress. Please stay tuned for more information.
 Revisor uses the [Knit](https://github.com/zyedidia/knit) build tool, so first
 install that. You'll also need a [Go compiler](https://go.dev/), and a D
 compiler (LDC 1.30+ or GDC 11+). The latest version of LDC can be downloaded
-from [here](https://github.com/ldc-developers/ldc/releases).
+from [here](https://github.com/ldc-developers/ldc/releases). You'll also need
+to install Meson and Ninja.
 
-To build, run `knit` in the repository root.
+Make sure the `picolibc` submodule is initialized:
+
+```
+git submodule update --init
+```
+
+Now run `knit` in the project root to build the `revisor` binary.
 
 # Usage
 
