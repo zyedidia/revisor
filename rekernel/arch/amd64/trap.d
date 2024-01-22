@@ -3,6 +3,7 @@ module arch.amd64.trap;
 import arch.amd64.regs;
 import arch.amd64.sys;
 import arch.amd64.init;
+import arch.amd64.vm;
 
 import proc;
 import syscall;
@@ -109,7 +110,8 @@ extern (C) {
 }
 
 noreturn usertrapret(Proc* p) {
-    vm_fence();
+    // flush TLB
+    wrpt(p.pt);
 
     info.proc_tf_end = cast(uintptr) p + p.trapframe.sizeof;
     info.kernel_sp = p.kstackp();
