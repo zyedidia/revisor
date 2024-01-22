@@ -125,6 +125,49 @@ void vm_fence() {
 pragma(inline, true)
 void isb() {
     asm {
-        "isb";
+        "isb sy";
     }
+}
+
+pragma(inline, true)
+void inv_dcache(void* start, usize size) {
+    for (usize i = 0; i < size; i++) {
+        asm {
+            "dc civac, %0" :: "r"(start + i);
+        }
+    }
+}
+
+pragma(inline, true)
+void clean_dcache(void* start, usize size) {
+    for (usize i = 0; i < size; i++) {
+        asm {
+            "dc cvau, %0" :: "r"(start + i);
+        }
+    }
+}
+
+pragma(inline, true)
+void clean_icache(void* start, usize size) {
+    for (usize i = 0; i < size; i++) {
+        asm {
+            "ic ivau, %0" :: "r"(start + i);
+        }
+    }
+}
+
+pragma(inline, true)
+void sync_fence() {
+    asm {
+        "dsb ish" ::: "memory";
+    }
+}
+
+pragma(inline, true)
+void sync_idmem(void* start, usize size) {
+    clean_dcache(start, size);
+    sync_fence();
+    clean_icache(start, size);
+    sync_fence();
+    isb();
 }

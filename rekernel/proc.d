@@ -174,6 +174,8 @@ err:
             memcpy(segment + offset, buf + iter.offset, iter.filesz);
             memset(segment + offset + iter.filesz, 0, iter.memsz - iter.filesz);
 
+            sync_idmem(segment, end - start);
+
             if (dyn_base + end > last)
                 last = dyn_base + end;
             if (dyn_base + start < base)

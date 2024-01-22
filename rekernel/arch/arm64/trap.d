@@ -112,8 +112,6 @@ struct Trapframe {
 extern (C) noreturn userret(Proc* p);
 
 noreturn usertrapret(Proc* p) {
-    SysReg.spsr_el1 = SPSR_EL0;
-
     p.trapframe.sp = p.kstackp();
     p.trapframe.tp = SysReg.tpidr_el1;
     SysReg.elr_el1 = p.trapframe.epc;
