@@ -118,6 +118,9 @@ void outb(int port)(ubyte data) {
     }
 }
 
+pragma(inline, true)
+void sync_idmem(void* start, usize size) {}
+
 enum {
     SEGSEL_KERN_CODE = 0x8,
     SEGSEL_APP_CODE  = 0x10,
