@@ -24,6 +24,9 @@ jobs:
     - name: Install build tools
       run: sudo apt-get install -y ninja-build meson
 
+    - name: Initialize submodules
+      run: git submodule update --init
+
     - name: Format
       run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
 
