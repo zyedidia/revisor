@@ -1,6 +1,6 @@
 module github.com/zyedidia/revisor
 
-go 1.21.3
+go 1.21
 
 require (
 	github.com/tysonmote/gommap v0.0.2
