@@ -1,0 +1,28 @@
+on: [push, pull_request]
+name: Test
+jobs:
+  test:
+    strategy:
+      matrix:
+        dc: [ldc-latest, ldc-1.32.1]
+        go-version: [1.19.x]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+    - uses: actions/checkout@v3
+    - uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: ${{ matrix.dc }}
+    - uses: zyedidia/setup-knit@v1
+
+    - name: Format
+      run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+
+    - name: Vet
+      run: "go vet ./..."
+
+    - name: Build
+      run: knit build
