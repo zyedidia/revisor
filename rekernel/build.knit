@@ -34,7 +34,6 @@ local obj = knit.join(knit.extrepl(dsrc, ".d", ".o"), knit.extrepl(ssrc, ".S", "
 obj = knit.prefix(obj, ".")
 
 local picolib := build/install
-local flags := -Wall -nostdlib -O2 -I. -L$picolib/lib -I$picolib/include -lc -lgcc -D$darch
 
 local dc = cli.dc or "ldc2"
 local o = sel(dc == "gdc", "o", "of")

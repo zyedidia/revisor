@@ -20,12 +20,13 @@ import file;
 
 private enum {
     usize KSTACK_SIZE  = 4 * PAGESIZE,
-    usize USTACK_SIZE  = 16 * PAGESIZE,
+    usize USTACK_SIZE  = 64 * PAGESIZE,
     uintptr USTACK_VA  = 0x0000_7fff_0000,
     uintptr MMAP_START = 0x0070_0000_0000,
     usize MMAP_SIZE    = gb(512),
     usize BRK_BASE     = gb(4),
     int ARGC_MAX       = 1024,
+    usize ARGV_MAX     = 1024,
 }
 
 struct Proc {
@@ -233,7 +234,12 @@ err:
 
         for (int i = 0; i < argc; i++) {
             assert(argv[i]);
-            usize len = strnlen(argv[i], 64);
+            usize len = strnlen(argv[i], ARGV_MAX);
+
+            if (len == ARGV_MAX) {
+                eprintf("warning: argv size cannot be larger than %ld\n", ARGV_MAX);
+            }
+
             argv_ptrs[i] = p_uargv;
             memcpy(p_argv, argv[i], len);
             p_argv += len;

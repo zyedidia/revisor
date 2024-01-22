@@ -130,7 +130,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
     case Sys.WAIT4:
         ret = sys_wait4(p, cast(int) a0, a1);
         break;
-    case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64, Sys.FCNTL:
+    case Sys.SET_TID_ADDRESS, Sys.SET_ROBUST_LIST, Sys.IOCTL, Sys.PRLIMIT64, Sys.FCNTL, Sys.FUTEX:
         // ignored
         ret = 0;
         break;

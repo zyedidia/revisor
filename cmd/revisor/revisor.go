@@ -134,5 +134,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("time:", time.Since(start))
+	fmt.Fprintln(os.Stderr, "time:", time.Since(start))
 }

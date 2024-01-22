@@ -68,6 +68,7 @@ enum Sys {
     VFORK = 58,
     EXECVE = 59,
     GETDENTS64 = 217,
+    FUTEX = 202,
 }
 
 immutable string[] syscall_names = [
@@ -115,4 +116,5 @@ immutable string[] syscall_names = [
     Sys.VFORK: "vfork",
     Sys.EXECVE: "execve",
     Sys.GETDENTS64: "getdents64",
+    Sys.FUTEX: "futex",
 ];

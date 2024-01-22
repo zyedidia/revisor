@@ -42,6 +42,7 @@ enum Sys {
     CLONE = 220,
     EXECVE = 221,
     GETDENTS64 = 61,
+    FUTEX = 98,
 }
 
 immutable string[] syscall_names = [
@@ -86,4 +87,5 @@ immutable string[] syscall_names = [
     Sys.CLONE: "clone",
     Sys.EXECVE: "execve",
     Sys.GETDENTS64: "getdents64",
+    Sys.FUTEX: "futex",
 ];
