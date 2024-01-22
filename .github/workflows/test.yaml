@@ -1,0 +1,37 @@
+on: [push, pull_request]
+name: Test
+jobs:
+  test:
+    strategy:
+      matrix:
+        dc: [ldc-latest, ldc-1.32.1]
+        go-version: [1.21.x]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - uses: actions/checkout@v3
+
+    - uses: dlang-community/setup-dlang@v1
+      with:
+        compiler: ${{ matrix.dc }}
+
+    - uses: zyedidia/setup-knit@v1
+
+    - name: Install build tools
+      run: sudo apt-get install -y ninja-build meson
+
+    - name: Initialize submodules
+      run: git submodule update --init
+
+    - name: Format
+      run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+
+    - name: Build
+      run: knit build
+
+    - name: Vet
+      run: "go vet ./..."
