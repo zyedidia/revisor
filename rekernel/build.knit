@@ -10,7 +10,7 @@ end
 
 local _, uconf = pcall(include, "conf.knit")
 
-local arch = cli.arch or uconf.arch or "arm64"
+local arch = cli.arch or uconf.arch or knit.arch
 local darch = string.upper(arch)
 
 local dsrc = knit.join(
