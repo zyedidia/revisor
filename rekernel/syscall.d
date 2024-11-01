@@ -61,6 +61,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
 
     switch (sysno) {
     case Sys.GETPID:
+        printf("getpid rdi: %ld (0x%lx)\n", p.trapframe.regs.rdi, p.trapframe.regs.rdi);
         ret = sys_getpid(p);
         break;
     case Sys.GETTID:
@@ -103,6 +104,7 @@ uintptr syscall_handler(Proc* p, ulong sysno, ulong a0, ulong a1, ulong a2, ulon
         ret = sys_fstatat(p, cast(int) a0, a1, a2, cast(int) a3);
         break;
     case Sys.EXIT, Sys.EXIT_GROUP:
+        printf("exit rdi: %ld (%lx)\n", p.trapframe.regs.rdi, p.trapframe.regs.rdi);
         sys_exit(p, cast(int) a0);
     case Sys.GETEUID, Sys.GETUID, Sys.GETEGID, Sys.GETGID:
         ret = 1000;

@@ -149,6 +149,7 @@ err:
             uintptr start = trunc(iter.vaddr, iter.align_);
             uintptr end = ceil(iter.vaddr + iter.memsz, iter.align_);
             uintptr offset = iter.vaddr - start;
+            printf("load %lx\n", start);
 
             void* segment;
             if (ehdr.type == ET_EXEC) {

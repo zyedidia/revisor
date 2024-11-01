@@ -47,6 +47,16 @@ private void set_gate(GateDescriptor* gate, ulong type, int dpl, uintptr func) {
     gate.high = func >> 32;
 }
 
+private void set_user_gate(GateDescriptor* gate, ulong type, int dpl, uintptr func) {
+    gate.low = (func & 0x000000000000FFFFUL)
+        | (SEGSEL_APP_CODE << 16)
+        | type
+        | (cast(ulong) dpl << 45)
+        | X86SEG_P
+        | ((func & 0x00000000FFFF0000UL) << 32);
+    gate.high = func >> 32;
+}
+
 private void segments_init() {
     segments[0] = 0;
     set_app_segment(&segments[SEGSEL_KERN_CODE >> 3], X86SEG_X | X86SEG_L, 0);
@@ -74,6 +84,7 @@ private void segments_init() {
     set_gate(&interrupt_descriptors[INT_PAGEFAULT], X86GATE_INTERRUPT, 0, cast(ulong) &pagefault_int_handler);
     set_gate(&interrupt_descriptors[INT_IRQ + IRQ_TIMER], X86GATE_INTERRUPT, 0, cast(ulong) &timer_int_handler);
     set_gate(&interrupt_descriptors[INT_IRQ + IRQ_SIGNAL], X86GATE_INTERRUPT, 0, cast(ulong) &signal_int_handler);
+    set_user_gate(&interrupt_descriptors[0x80], X86GATE_INTERRUPT, 3, cast(ulong) 0x1000);
 
     PseudoDescriptor idt;
     idt.limit = interrupt_descriptors.sizeof - 1;
@@ -102,7 +113,7 @@ private void segments_init() {
 
     // set up syscall/sysret
     wr_msr(MSR_IA32_KERNEL_GS_BASE, 0);
-    wr_msr(MSR_IA32_STAR, (cast(uintptr) SEGSEL_KERN_CODE << 32) | (cast(uintptr) SEGSEL_APP_CODE << 48));
+    wr_msr(MSR_IA32_STAR, (cast(uintptr) SEGSEL_KERN_CODE << 32) | (cast(uintptr) (SEGSEL_APP_CODE) << 48));
     wr_msr(MSR_IA32_LSTAR, cast(ulong) &syscall_entry);
     wr_msr(MSR_IA32_FMASK, EFLAGS_TF | EFLAGS_DF | EFLAGS_IF | EFLAGS_IOPL_MASK | EFLAGS_AC | EFLAGS_NT);
 }

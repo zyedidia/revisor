@@ -128,6 +128,7 @@ enum {
     SEGSEL_APP_DATA  = 0x20,
     SEGSEL_TASKSTATE = 0x28,
 
+    X86SEG_DC = 1UL << 42,
     X86SEG_S = 1UL << 44,
     X86SEG_P = 1UL << 47,
     X86SEG_L = 1UL << 53,
