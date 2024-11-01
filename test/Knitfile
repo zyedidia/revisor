@@ -2,6 +2,8 @@ local arch = cli.arch or "amd64"
 
 return b{
     $ all:VB: test_$arch.elf
+    $ int: int.s
+        gcc $input -o $output -static -nostdlib -T ld.ld
     $ %.elf: %.s
         gcc -nostdlib -O2 $input -o $output -static
 }
