@@ -100,4 +100,8 @@ extern (C) {
     void __assert(immutable(char)* msg, immutable(char)* file, int line) {
         panicf("%s:%d: %s\n", file, line, msg);
     }
+
+    void __assert_fail(immutable(char)* msg, immutable(char)* file, int line, void* _) {
+        panicf("%s:%d: %s\n", file, line, msg);
+    }
 }
