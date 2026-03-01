@@ -1,0 +1,15 @@
+[package]
+name = "revisor"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "revisor"
+path = "src/main.rs"
+
+[dependencies]
+thiserror = "2"
+kvm-bindings = { version = "0.14", features = ["fam-wrappers"] }
+kvm-ioctls = "0.24"
+libc = "0.2"
+anyhow = "1"
