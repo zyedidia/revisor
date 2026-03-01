@@ -1,4 +1,0 @@
-[submodule "rekernel/picolibc"]
-	path = rekernel/picolibc
-    branch = general-regs-only
-	url = https://github.com/zyedidia/picolibc
