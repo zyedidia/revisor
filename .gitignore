@@ -1,8 +1,7 @@
-.knit
-/revisor
-*.elf
-*.dep
-*.o
-build-newlib
-build
-todo.txt
+REVISOR.md
+/guest/init
+*.cpio.gz
+/reference
+/linux
+/gokvm
+*.so.*
